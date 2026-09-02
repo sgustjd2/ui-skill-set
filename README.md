@@ -109,8 +109,11 @@ Figma 변수 이름은 `gray/500`·`accent/600` 규칙을 따라야 `--ui-<ramp>
 같은 프롬프트를 여러 번 돌려 팔레트·폰트·라디우스가 안 흔들리는지 잰다. 골든 프롬프트 5개는 [eval/prompts/](eval/prompts/), 사용법은 [eval/README.md](eval/README.md).
 
 ```bash
-node eval/consistency.mjs runs/01-settings   # 실행별 폴더의 토큰 집합·위반 비교, PASS/FAIL
+node eval/consistency.mjs runs/01-settings              # 전역 Jaccard
+node eval/consistency.mjs runs/01-settings --roles      # 역할별(코어) 일치
 ```
+
+첫 실측 기준선은 [eval/results.md](eval/results.md) — 골든 프롬프트 5개 전부 **코어 역할 일치 100%, 하드 위반 0, PASS**.
 
 ## 예외
 
