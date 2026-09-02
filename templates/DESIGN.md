@@ -67,6 +67,7 @@ UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
 ## 7. 컴포넌트 규약
 
 - primary CTA 화면당 **1개**. 버튼 variant: brand-solid · neutral-weak · critical-solid · text. 나란히 최대 3개.
+- **파괴적 버튼은 강조도로 정한다**: 위험 구역의 트리거(대개 이차 액션, 실제 확정은 모달에서)는 **아웃라인** — `border-stroke-critical` + `text-fg-critical`, hover `bg-critical-weak`. 모달의 **최종 확정**만 솔리드 — `bg-critical-solid` + `text-fg-on-solid`. 한 화면에 파괴적 솔리드는 최대 1개. (트리거까지 솔리드로 하면 화면이 위협적으로 읽힌다.)
 - 모든 인터랙티브 요소에 **상태 5종** 구현: hover · disabled · loading · error · empty(목록/데이터).
 - 터치 타겟 ≥ 44px. `focus-visible` 링 보임(토큰이 처리). 아이콘 라이브러리 1종(`lucide-react`), 스트로크 굵기 고정(1.75).
 - 이모지는 아이콘이 아니다. 로딩은 스켈레톤(`--ui-gradient-shimmer`), 스피너는 버튼 안에서만.
