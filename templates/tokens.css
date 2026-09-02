@@ -1,0 +1,311 @@
+/* tokens.css · ui-skill-set 0.1
+ * 이 파일만 원색(raw hex / px / ms)을 가진다. 컴포넌트는 semantic 토큰만 쓴다. (design-lint R3/R4가 강제)
+ * 2계층: scale(원색) → semantic(역할). 다크모드는 scale만 뒤집는다 → semantic은 자동으로 따라온다.
+ * 스케일 값 출처: daangn/seed-design packages/rootage (Apache-2.0, 브랜드 중립 부분만. NOTICE 참조)
+ * 설치 위치 기본: src/styles/tokens.css. Tailwind v4면 CSS 엔트리에서 @import "tailwindcss" 다음 줄에 @import 한다.
+ */
+
+:root {
+  /* ══ scale ═══════════════════════════════════════════════════════════ */
+
+  /* gray 00(흰)…1000(검) — 다크에서 통째로 반전 */
+  --ui-gray-00: #ffffff;
+  --ui-gray-100: #f7f8f9;
+  --ui-gray-200: #f3f4f5;
+  --ui-gray-300: #eeeff1;
+  --ui-gray-400: #dcdee3;
+  --ui-gray-500: #d1d3d8;
+  --ui-gray-600: #b0b3ba;
+  --ui-gray-700: #868b94;
+  --ui-gray-800: #555d6d;
+  --ui-gray-900: #2a3038;
+  --ui-gray-1000: #1a1c20;
+
+  /* accent — 프로젝트 액센트 1색. TODO: 브랜드 램프로 교체 (기본값은 채도 낮은 파랑 플레이스홀더) */
+  --ui-accent-100: #eff6ff;
+  --ui-accent-200: #e2edfc;
+  --ui-accent-300: #cbdffa;
+  --ui-accent-400: #aacefd;
+  --ui-accent-500: #85b8fd;
+  --ui-accent-600: #217cf9;
+  --ui-accent-700: #135fcd;
+  --ui-accent-800: #0b4596;
+  --ui-accent-900: #032451;
+
+  /* 상태색: critical / positive / informative */
+  --ui-red-100: #fdf0f0;
+  --ui-red-200: #fde7e7;
+  --ui-red-300: #fed4d2;
+  --ui-red-600: #fc6a66;
+  --ui-red-700: #fa342c;
+  --ui-red-800: #ca1d13;
+  --ui-red-900: #921708;
+  --ui-green-100: #edfaf6;
+  --ui-green-200: #d9f6e9;
+  --ui-green-600: #10ab7d;
+  --ui-green-700: #079171;
+  --ui-green-800: #00745f;
+  --ui-blue-100: #eff6ff;
+  --ui-blue-200: #e2edfc;
+  --ui-blue-600: #5e98fe;
+  --ui-blue-700: #217cf9;
+  --ui-blue-800: #135fcd;
+  --ui-black-a70: rgb(0 0 0 / 0.7);
+
+  /* space — 4px 그리드. Tailwind v4의 --spacing(.25rem)과 동일하므로 p-4 = 16px 그대로 쓴다 */
+  --ui-space-0_5: 2px;
+  --ui-space-1: 4px;
+  --ui-space-1_5: 6px;
+  --ui-space-2: 8px;
+  --ui-space-2_5: 10px;
+  --ui-space-3: 12px;
+  --ui-space-3_5: 14px;
+  --ui-space-4: 16px;
+  --ui-space-4_5: 18px;
+  --ui-space-5: 20px;
+  --ui-space-6: 24px;
+  --ui-space-7: 28px;
+  --ui-space-8: 32px;
+  --ui-space-9: 36px;
+  --ui-space-10: 40px;
+  --ui-space-12: 48px;
+  --ui-space-14: 56px;
+  --ui-space-16: 64px;
+
+  /* radius */
+  --ui-radius-0_5: 2px;
+  --ui-radius-1: 4px;
+  --ui-radius-1_5: 6px;
+  --ui-radius-2: 8px;
+  --ui-radius-2_5: 10px;
+  --ui-radius-3: 12px;
+  --ui-radius-4: 16px;
+  --ui-radius-5: 20px;
+  --ui-radius-6: 24px;
+  --ui-radius-full: 9999px;
+
+  /* type — t1~t14. 본문(t1~t5) 행간은 한글 기준 1.5 이상 */
+  --ui-text-1: 0.6875rem;  --ui-leading-1: 16px;  /* 11px */
+  --ui-text-2: 0.75rem;    --ui-leading-2: 18px;  /* 12px */
+  --ui-text-3: 0.8125rem;  --ui-leading-3: 20px;  /* 13px */
+  --ui-text-4: 0.875rem;   --ui-leading-4: 21px;  /* 14px */
+  --ui-text-5: 1rem;       --ui-leading-5: 24px;  /* 16px 본문 기본 */
+  --ui-text-6: 1.125rem;   --ui-leading-6: 24px;  /* 18px */
+  --ui-text-7: 1.25rem;    --ui-leading-7: 27px;  /* 20px */
+  --ui-text-8: 1.375rem;   --ui-leading-8: 30px;  /* 22px */
+  --ui-text-9: 1.5rem;     --ui-leading-9: 32px;  /* 24px */
+  --ui-text-10: 1.625rem;  --ui-leading-10: 35px; /* 26px */
+  --ui-text-11: 1.75rem;   --ui-leading-11: 38px; /* 28px · t11+는 sm(480px) 이상에서만 */
+  --ui-text-12: 2rem;      --ui-leading-12: 42px; /* 32px */
+  --ui-text-13: 2.5rem;    --ui-leading-13: 52px; /* 40px */
+  --ui-text-14: 3rem;      --ui-leading-14: 60px; /* 48px */
+  --ui-weight-regular: 400;
+  --ui-weight-medium: 500;
+  --ui-weight-bold: 700;
+  --ui-font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", sans-serif;
+  --ui-font-mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* motion — 마이크로 ≤ 200ms */
+  --ui-duration-1: 50ms;
+  --ui-duration-2: 100ms;
+  --ui-duration-3: 150ms;
+  --ui-duration-4: 200ms;
+  --ui-duration-5: 250ms;
+  --ui-duration-6: 300ms;
+  --ui-ease-standard: cubic-bezier(0.35, 0, 0.35, 1);
+  --ui-ease-enter: cubic-bezier(0, 0, 0.15, 1);
+  --ui-ease-exit: cubic-bezier(0.35, 0, 1, 1);
+  --ui-ease-enter-expressive: cubic-bezier(0.03, 0.4, 0.1, 1);
+  --ui-ease-exit-expressive: cubic-bezier(0.35, 0, 0.95, 0.55);
+
+  /* shadow — 3단계뿐. 화면당 그림자 요소 ≤ 3개 (DESIGN.md §5) */
+  --ui-shadow-1: 0 1px 4px 0 rgb(0 0 0 / 0.08);
+  --ui-shadow-2: 0 2px 10px 0 rgb(0 0 0 / 0.10);
+  --ui-shadow-3: 0 4px 16px 0 rgb(0 0 0 / 0.12);
+
+  /* ══ semantic: {fg|bg|stroke}-{role}-{variant}-{state} ═══════════════ */
+
+  --ui-color-fg-neutral: var(--ui-gray-1000);
+  --ui-color-fg-neutral-muted: var(--ui-gray-800);
+  --ui-color-fg-neutral-subtle: var(--ui-gray-700);
+  --ui-color-fg-placeholder: var(--ui-gray-600);
+  --ui-color-fg-disabled: var(--ui-gray-500);
+  --ui-color-fg-brand: var(--ui-accent-600);
+  --ui-color-fg-on-brand: var(--ui-gray-00);
+  --ui-color-fg-on-solid: var(--ui-gray-00);
+  --ui-color-fg-critical: var(--ui-red-700);
+  --ui-color-fg-positive: var(--ui-green-700);
+  --ui-color-fg-informative: var(--ui-blue-700);
+
+  --ui-color-bg-basement: var(--ui-gray-200);       /* 0단계 대지. 화면 전체 배경 */
+  --ui-color-bg-layer-default: var(--ui-gray-00);   /* 1단계. 대부분의 콘텐츠 표면 */
+  --ui-color-bg-layer-elevated: var(--ui-gray-00);  /* 2단계. 시트·메뉴 */
+  --ui-color-bg-neutral-weak: var(--ui-gray-100);
+  --ui-color-bg-neutral-weak-pressed: var(--ui-gray-300);
+  --ui-color-bg-neutral-solid: var(--ui-gray-1000);
+  --ui-color-bg-brand-solid: var(--ui-accent-600);
+  --ui-color-bg-brand-solid-pressed: var(--ui-accent-700);
+  --ui-color-bg-brand-weak: var(--ui-accent-100);
+  --ui-color-bg-brand-weak-pressed: var(--ui-accent-200);
+  --ui-color-bg-critical-solid: var(--ui-red-700);
+  --ui-color-bg-critical-solid-pressed: var(--ui-red-800);
+  --ui-color-bg-critical-weak: var(--ui-red-100);
+  --ui-color-bg-positive-weak: var(--ui-green-100);
+  --ui-color-bg-informative-weak: var(--ui-blue-100);
+  --ui-color-bg-disabled: var(--ui-gray-300);
+  --ui-color-bg-overlay: var(--ui-black-a70);
+
+  --ui-color-stroke-neutral: var(--ui-gray-400);
+  --ui-color-stroke-neutral-muted: var(--ui-gray-300);
+  --ui-color-stroke-brand: var(--ui-accent-600);
+  --ui-color-stroke-critical: var(--ui-red-700);
+  --ui-color-stroke-focus: var(--ui-accent-600);
+
+  /* 유일한 그라데이션 토큰. 스켈레톤 시머 전용 */
+  --ui-gradient-shimmer: linear-gradient(90deg, var(--ui-gray-100) 0%, var(--ui-gray-200) 50%, var(--ui-gray-100) 100%);
+
+  /* radius 역할 — DESIGN.md radius_scale: soft 기준. sharp면 0, pill이면 control=full */
+  --ui-radius-control: var(--ui-radius-2);   /* 버튼·인풋·칩 */
+  --ui-radius-card: var(--ui-radius-4);      /* 카드·팝오버 */
+  --ui-radius-sheet: var(--ui-radius-5);     /* 바텀시트·다이얼로그 */
+
+  color-scheme: light;
+}
+
+/* ══ dark: scale만 뒤집는다. 예외(basement/layer/solid)는 seed 규칙대로 별도 지정 ═══════ */
+:root[data-theme="dark"] {
+  --ui-gray-00: #000000;
+  --ui-gray-100: #16171b;
+  --ui-gray-200: #1d2025;
+  --ui-gray-300: #2b2e35;
+  --ui-gray-400: #393d46;
+  --ui-gray-500: #5b606a;
+  --ui-gray-600: #868b94;
+  --ui-gray-700: #b0b3ba;
+  --ui-gray-800: #dcdee3;
+  --ui-gray-900: #e9eaec;
+  --ui-gray-1000: #f3f4f5;
+
+  --ui-accent-100: #202742;
+  --ui-accent-200: #1e3352;
+  --ui-accent-300: #1a4275;
+  --ui-accent-400: #0f559e;
+  --ui-accent-500: #1964d8;
+  --ui-accent-600: #41a2f9;
+  --ui-accent-700: #83bcf9;
+  --ui-accent-800: #b9d7fb;
+  --ui-accent-900: #e5f0fe;
+
+  --ui-red-100: #322323;
+  --ui-red-200: #4f2624;
+  --ui-red-300: #742826;
+  --ui-red-600: #f73526;
+  --ui-red-700: #ff6e60;
+  --ui-red-800: #ffa299;
+  --ui-red-900: #f8c5c3;
+  --ui-green-100: #202926;
+  --ui-green-200: #20362e;
+  --ui-green-600: #1b946d;
+  --ui-green-700: #22b27f;
+  --ui-green-800: #35ce9a;
+  --ui-blue-100: #202742;
+  --ui-blue-200: #1e3352;
+  --ui-blue-600: #1e82eb;
+  --ui-blue-700: #41a2f9;
+  --ui-blue-800: #83bcf9;
+
+  /* 다크는 고도가 높을수록 밝아진다 */
+  --ui-color-bg-basement: var(--ui-gray-00);
+  --ui-color-bg-layer-default: var(--ui-gray-100);
+  --ui-color-bg-layer-elevated: var(--ui-gray-200);
+  --ui-color-bg-neutral-solid: var(--ui-gray-300);
+  --ui-color-fg-on-solid: var(--ui-gray-1000);
+
+  /* 다크는 그림자를 진하게 */
+  --ui-shadow-1: 0 1px 4px 0 rgb(0 0 0 / 0.5);
+  --ui-shadow-2: 0 2px 10px 0 rgb(0 0 0 / 0.68);
+  --ui-shadow-3: 0 4px 16px 0 rgb(0 0 0 / 0.8);
+
+  color-scheme: dark;
+}
+/* 시스템 다크 따르기: <html>에 아래 인라인 스크립트 한 줄 (깜빡임 방지, 최상단)
+   <script>document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'</script> */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ui-duration-1: 0ms; --ui-duration-2: 0ms; --ui-duration-3: 0ms;
+    --ui-duration-4: 0ms; --ui-duration-5: 0ms; --ui-duration-6: 0ms;
+  }
+}
+
+/* ══ 전역 기본 — 한국어 ═══════════════════════════════════════════════ */
+html {
+  font-family: var(--ui-font-sans);
+  color: var(--ui-color-fg-neutral);
+  background: var(--ui-color-bg-basement);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 2px solid var(--ui-color-stroke-focus); outline-offset: 2px; }
+::placeholder { color: var(--ui-color-fg-placeholder); }
+::selection { background: var(--ui-color-bg-brand-weak); }
+
+/* ══ Tailwind v4 브릿지 (Tailwind가 아니면 브라우저가 무시) ═════════════════
+ * --color-*: initial 로 기본 팔레트(bg-blue-500 등)를 제거한다 → 빌드 단계에서도 R3가 강제된다.
+ * 유틸리티: bg-brand-solid · text-fg-neutral · border-stroke-neutral · rounded-control · shadow-1 · ease-enter · font-sans
+ */
+@theme inline {
+  --color-*: initial;
+  --color-fg-neutral: var(--ui-color-fg-neutral);
+  --color-fg-neutral-muted: var(--ui-color-fg-neutral-muted);
+  --color-fg-neutral-subtle: var(--ui-color-fg-neutral-subtle);
+  --color-fg-placeholder: var(--ui-color-fg-placeholder);
+  --color-fg-disabled: var(--ui-color-fg-disabled);
+  --color-fg-brand: var(--ui-color-fg-brand);
+  --color-fg-on-brand: var(--ui-color-fg-on-brand);
+  --color-fg-on-solid: var(--ui-color-fg-on-solid);
+  --color-fg-critical: var(--ui-color-fg-critical);
+  --color-fg-positive: var(--ui-color-fg-positive);
+  --color-fg-informative: var(--ui-color-fg-informative);
+  --color-basement: var(--ui-color-bg-basement);
+  --color-layer-default: var(--ui-color-bg-layer-default);
+  --color-layer-elevated: var(--ui-color-bg-layer-elevated);
+  --color-neutral-weak: var(--ui-color-bg-neutral-weak);
+  --color-neutral-weak-pressed: var(--ui-color-bg-neutral-weak-pressed);
+  --color-neutral-solid: var(--ui-color-bg-neutral-solid);
+  --color-brand-solid: var(--ui-color-bg-brand-solid);
+  --color-brand-solid-pressed: var(--ui-color-bg-brand-solid-pressed);
+  --color-brand-weak: var(--ui-color-bg-brand-weak);
+  --color-brand-weak-pressed: var(--ui-color-bg-brand-weak-pressed);
+  --color-critical-solid: var(--ui-color-bg-critical-solid);
+  --color-critical-solid-pressed: var(--ui-color-bg-critical-solid-pressed);
+  --color-critical-weak: var(--ui-color-bg-critical-weak);
+  --color-positive-weak: var(--ui-color-bg-positive-weak);
+  --color-informative-weak: var(--ui-color-bg-informative-weak);
+  --color-disabled: var(--ui-color-bg-disabled);
+  --color-overlay: var(--ui-color-bg-overlay);
+  --color-stroke-neutral: var(--ui-color-stroke-neutral);
+  --color-stroke-neutral-muted: var(--ui-color-stroke-neutral-muted);
+  --color-stroke-brand: var(--ui-color-stroke-brand);
+  --color-stroke-critical: var(--ui-color-stroke-critical);
+  --color-stroke-focus: var(--ui-color-stroke-focus);
+
+  --font-sans: var(--ui-font-sans);
+  --font-mono: var(--ui-font-mono);
+
+  --radius-*: initial;
+  --radius-control: var(--ui-radius-control);
+  --radius-card: var(--ui-radius-card);
+  --radius-sheet: var(--ui-radius-sheet);
+  --radius-full: var(--ui-radius-full);
+
+  --shadow-*: initial;
+  --shadow-1: var(--ui-shadow-1);
+  --shadow-2: var(--ui-shadow-2);
+  --shadow-3: var(--ui-shadow-3);
+
+  --ease-standard: var(--ui-ease-standard);
+  --ease-enter: var(--ui-ease-enter);
+  --ease-exit: var(--ui-ease-exit);
+}

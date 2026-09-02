@@ -1,0 +1,22 @@
+ui-skill-set
+Copyright (c) 2026 sgustjd2. Licensed under the MIT License (see LICENSE).
+
+This project includes material derived from the following Apache-2.0 licensed works:
+
+1. SEED Design — https://github.com/daangn/seed-design (commit 714ab67)
+   Copyright (c) Danggeun Market Inc.
+   Used: design-token scale values (gray/blue/red/green palettes, dimension, radius,
+   font-size, line-height, duration, timing-function, shadow) and the semantic color
+   grammar, in templates/tokens.css. Daangn's name, logo, characters, and the carrot
+   brand palette are trademarks and are NOT included, per their NOTICE.
+
+2. Impeccable — https://github.com/pbakaus/impeccable (commit 94b7f34)
+   Copyright (c) Paul Bakaus.
+   Used: anti-pattern detection regular expressions (AI-purple hex list, Tailwind
+   gradient/palette patterns, overused-font handling) in templates/design-lint.mjs,
+   and the structure of skills/ui-design/references/craft-floor.md.
+
+Apache License 2.0: http://www.apache.org/licenses/LICENSE-2.0
+
+Rule phrasing conventions were informed by leonxlnx/taste-skill and
+nextlevelbuilder/ui-ux-pro-max-skill (both MIT); no code was copied from them.
