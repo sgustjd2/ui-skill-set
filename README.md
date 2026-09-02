@@ -83,7 +83,13 @@ node .claude/hooks/design-audit.mjs http://localhost:5173
 
 뷰포트 375/768/1280에서 검사: 대비 4.5:1(큰 글자 3:1) 미달, 가로 스크롤, `<html lang>`·viewport 누락은 blocker(exit 1); 44px 미만 터치타겟·안 보이는 포커스·이름 없는 버튼·alt 없는 이미지·h1 개수는 warn. playwright가 없으면 안내 후 exit 0(세션·CI를 안 깬다).
 
-런타임 감사는 화면에 뜬 것만 본다(빈 placeholder처럼 안 뜬 조합은 놓친다). 그 짝으로 `tokens-contrast.test.mjs`가 tokens.css의 시맨틱 색 쌍(버튼·본문·배지·포커스·placeholder)이 라이트·다크 양쪽에서 WCAG를 넘는지 브라우저 없이 정적으로 검사한다. 브랜드 색을 바꾸면 이 테스트가 대비 회귀를 커밋 시점에 잡는다.
+런타임 감사는 화면에 뜬 것만 본다(빈 placeholder처럼 안 뜬 조합은 놓친다). 그 짝으로 `tokens-contrast.mjs`가 tokens.css의 시맨틱 색 쌍(버튼·본문·배지·포커스·placeholder)이 라이트·다크 양쪽에서 WCAG를 넘는지 브라우저 없이 정적으로 검사한다. 설치 시 `.claude/hooks/`에 함께 들어가므로 **브랜드 액센트를 바꾼 뒤** 돌려 대비 회귀를 잡는다:
+
+```bash
+node .claude/hooks/tokens-contrast.mjs --tokens src/styles/tokens.css
+```
+
+이게 `--ui-accent-*`를 교체했을 때 primary 버튼 흰 글자가 4.5:1을 못 넘는 흔한 실수를 커밋 전에 잡는다.
 
 ## Figma 토큰 동기화 (선택)
 

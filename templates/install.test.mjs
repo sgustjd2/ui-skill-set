@@ -147,6 +147,7 @@ t('integration: full install then lint blocks', () => {
   assert.ok(fs.existsSync(path.join(root, 'src/styles/theme.css')));
   assert.ok(fs.existsSync(path.join(root, '.claude/hooks/design-lint.mjs')));
   assert.ok(fs.existsSync(path.join(root, '.claude/hooks/design-audit.mjs')));
+  assert.ok(fs.existsSync(path.join(root, '.claude/hooks/tokens-contrast.mjs')));
   assert.ok(fs.existsSync(path.join(root, '.claude/skills/ui-design/SKILL.md')));
   assert.ok(fs.existsSync(path.join(root, '.claude/skills/ui-design/references/banned.md')));
   const settings = JSON.parse(fs.readFileSync(path.join(root, '.claude/settings.json'), 'utf8'));

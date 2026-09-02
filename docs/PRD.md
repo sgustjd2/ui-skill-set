@@ -4,7 +4,7 @@
 |---|---|
 | 버전 | 0.1 (초안) |
 | 작성일 | 2026-09-02 |
-| 상태 | **M0~M3 구현 완료** (2026-09-02). 결정 D1~D6 확정. FR-1~16 전부 구현·검증, 테스트 6스위트 187개 통과. 실제 Vite+React+Tailwind 프로젝트로 도그푸딩 완료 |
+| 상태 | **M0~M3 구현 완료** (2026-09-02). 결정 D1~D6 확정. FR-1~16 전부 구현·검증, 테스트 6스위트 162개 통과. 실제 Vite+React+Tailwind 프로젝트로 도그푸딩 완료 |
 | 저장소 | `sgustjd2/ui-skill-set` |
 | 근거 자료 | `docs/research/` (레퍼런스 4개 정밀 분석) |
 
@@ -486,7 +486,7 @@ radius_scale: soft         # sharp | soft | pill
 | **M2 배포** | ✅ 완료 | FR-12~13. `.claude-plugin/` 매니페스트, `skills/llms.txt`, README(ko), 골든 프롬프트 5개 + `eval/consistency.mjs` | 다른 작업자가 README만 보고 설치·사용 성공 |
 | **M3 확장** | ✅ 완료 | FR-14 ✅ Tailwind v3 브릿지. FR-15 ✅ 런타임 감사. FR-16 ✅ Figma 동기화 | |
 
-**테스트**: design-lint 91 + install 20 + audit 24 + figma 17 + tokens-contrast 29 + consistency 6 = 187개, 전부 통과.
+**테스트**: design-lint 91 + install 20 + audit 24 + figma 17 + tokens-contrast 4 + consistency 6 = 162개, 전부 통과.
 
 **FR-16 Figma 토큰 동기화**(2026-09-02): `figma-sync.mjs`가 Figma 변수(색 팔레트, Light/Dark 모드)를 REST로 읽어 tokens.css의 scale 색 토큰을 갱신한다. 색만 대상(gray/accent/red/green/blue 램프), 시맨틱·간격·라디우스는 안 건드림. 순수 로직(hexFromFigma/parseFigmaVariables/applyToTokensCss)은 실제 API 응답 형태 픽스처로 17개 테스트. dry-run 기본, `--write`로 반영. Variables API는 Enterprise 전용이라 403이면 플러그인 export를 `--from <json>`으로 받는다. FIGMA_TOKEN 없으면 안내 후 exit 0(CI 안 깸). 니치라 install에 자동 포함 안 하고 checkout에서 실행.
 

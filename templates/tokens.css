@@ -21,7 +21,8 @@
   --ui-gray-900: #2a3038;
   --ui-gray-1000: #1a1c20;
 
-  /* accent — 프로젝트 액센트 1색. TODO: 브랜드 램프로 교체 (기본값은 채도 낮은 파랑 플레이스홀더) */
+  /* accent — 프로젝트 액센트 1색. TODO: 브랜드 램프로 교체 (기본값은 채도 낮은 파랑 플레이스홀더)
+     교체 후 반드시: node .claude/hooks/tokens-contrast.mjs — primary 버튼 흰 글자가 4.5:1을 넘는지 확인 */
   --ui-accent-100: #eff6ff;
   --ui-accent-200: #e2edfc;
   --ui-accent-300: #cbdffa;

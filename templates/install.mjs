@@ -106,6 +106,8 @@ function main() {
   log('✓ .claude/hooks/design-lint.mjs');
   fs.copyFileSync(tpl('design-audit.mjs'), dst('.claude/hooks/design-audit.mjs'));
   log('✓ .claude/hooks/design-audit.mjs (런타임 감사, playwright 필요)');
+  fs.copyFileSync(tpl('tokens-contrast.mjs'), dst('.claude/hooks/tokens-contrast.mjs'));
+  log('✓ .claude/hooks/tokens-contrast.mjs (토큰 대비 정적 검사)');
   if (fs.existsSync(dst('.claude/skills/ui-design'))) fs.rmSync(dst('.claude/skills/ui-design'), { recursive: true, force: true });
   cpDir(path.join(srcRoot, 'skills', 'ui-design'), dst('.claude/skills/ui-design'));
   log('✓ .claude/skills/ui-design/');
