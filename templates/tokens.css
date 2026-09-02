@@ -128,7 +128,7 @@
   --ui-color-fg-neutral: var(--ui-gray-1000);
   --ui-color-fg-neutral-muted: var(--ui-gray-800);
   --ui-color-fg-neutral-subtle: var(--ui-gray-700);   /* 대비 ~3:1. 큰 글자(≥24px)·아이콘·비활성 힌트에만. 작은 본문은 fg-neutral-muted */
-  --ui-color-fg-placeholder: var(--ui-gray-600);
+  --ui-color-fg-placeholder: var(--ui-gray-700);   /* ~3:1 힌트. 라벨을 항상 인풋 위에 두는 전제(placeholder-as-label 금지) */
   --ui-color-fg-disabled: var(--ui-gray-500);
   /* 흰 글자를 얹는 solid, 흰 배경 위 text 는 4.5:1 을 넘겨야 한다. 그래서 600이 아니라 700.
      design-audit 로 검증한다. 브랜드 램프를 교체할 때도 이 대비를 지켜야 한다. */

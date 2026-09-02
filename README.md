@@ -83,6 +83,8 @@ node .claude/hooks/design-audit.mjs http://localhost:5173
 
 뷰포트 375/768/1280에서 검사: 대비 4.5:1(큰 글자 3:1) 미달, 가로 스크롤, `<html lang>`·viewport 누락은 blocker(exit 1); 44px 미만 터치타겟·안 보이는 포커스·이름 없는 버튼·alt 없는 이미지·h1 개수는 warn. playwright가 없으면 안내 후 exit 0(세션·CI를 안 깬다).
 
+런타임 감사는 화면에 뜬 것만 본다(빈 placeholder처럼 안 뜬 조합은 놓친다). 그 짝으로 `tokens-contrast.test.mjs`가 tokens.css의 시맨틱 색 쌍(버튼·본문·배지·포커스·placeholder)이 라이트·다크 양쪽에서 WCAG를 넘는지 브라우저 없이 정적으로 검사한다. 브랜드 색을 바꾸면 이 테스트가 대비 회귀를 커밋 시점에 잡는다.
+
 ## Figma 토큰 동기화 (선택)
 
 디자이너가 Figma 변수로 색 팔레트(라이트/다크 모드)를 관리하면, `figma-sync.mjs`가 그 값을 `tokens.css`의 scale 색 토큰(`--ui-gray-*`·`--ui-accent-*`·`--ui-red/green/blue-*`)에 반영한다. 색만 대상이고 간격·라디우스·타이포는 코드에 둔다. 시맨틱 토큰은 안 건드린다.
