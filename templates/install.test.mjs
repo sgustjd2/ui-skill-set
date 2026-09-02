@@ -5,7 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { mergeSettings, fillFrontmatter, appendSnippet } from './install.mjs';
+import { mergeSettings, fillFrontmatter, appendSnippet, stripThemeBlock } from './install.mjs';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
 
 let n = 0, failed = 0;
 const t = (name, fn) => { try { fn(); n++; } catch (e) { failed++; console.error(`✗ ${name}\n   ${e.message}`); } };
@@ -69,6 +71,57 @@ t('append is idempotent', () => {
   const twice = appendSnippet(once, '## UI 작업 규약 (ui-skill-set)\n- x');
   assert.equal(once, twice);
   assert.equal((twice.match(/UI 작업 규약/g) || []).length, 1);
+});
+
+// ── stripThemeBlock (v3용)
+t('strip removes @theme block, keeps :root', () => {
+  const css = ':root{--ui-x:1}\n@theme inline {\n  --color-a: var(--ui-x);\n}\nhtml{color:red}';
+  const out = stripThemeBlock(css);
+  assert.ok(!/@theme/.test(out));
+  assert.match(out, /:root\{--ui-x:1\}/);
+  assert.match(out, /html\{color:red\}/);
+});
+t('strip on real template tokens.css', () => {
+  const css = fs.readFileSync(path.join(here, 'tokens.css'), 'utf8');
+  assert.ok(/@theme/.test(css), '템플릿엔 @theme 있어야');
+  const out = stripThemeBlock(css);
+  assert.ok(!/@theme/.test(out), '제거 후 @theme 없어야');
+  assert.match(out, /--ui-color-bg-brand-solid/); // 스케일/시맨틱 변수는 남음
+  assert.match(out, /word-break: keep-all/);       // 전역 규칙 남음
+});
+t('strip no-op when no @theme', () => assert.equal(stripThemeBlock(':root{--x:1}'), ':root{--x:1}'));
+
+// ── v3 프리셋 require + 키 확인
+t('v3 preset requires and has semantic keys', () => {
+  const preset = require('./tailwind.ui-preset.cjs');
+  const colors = preset.theme.extend.colors;
+  assert.equal(colors['brand-solid'], 'var(--ui-color-bg-brand-solid)');
+  assert.equal(colors['fg-neutral'], 'var(--ui-color-fg-neutral)');
+  assert.equal(colors['stroke-neutral'], 'var(--ui-color-stroke-neutral)');
+  assert.deepEqual(preset.theme.extend.fontSize['4'], ['var(--ui-text-4)', 'var(--ui-leading-4)']);
+  assert.equal(preset.theme.extend.borderRadius.control, 'var(--ui-radius-control)');
+  assert.equal(preset.theme.extend.boxShadow['1'], 'var(--ui-shadow-1)');
+});
+t('v3 preset color keys cover @theme --color-* names', () => {
+  const css = fs.readFileSync(path.join(here, 'tokens.css'), 'utf8');
+  const theme = css.slice(css.search(/@theme/));
+  const names = [...theme.matchAll(/^\s*--color-([\w-]+):/gm)].map((m) => m[1]);
+  const keys = new Set(Object.keys(require('./tailwind.ui-preset.cjs').theme.extend.colors));
+  const missing = names.filter((n) => !keys.has(n));
+  assert.deepEqual(missing, [], `프리셋에 없는 색: ${missing.join(', ')}`);
+});
+
+// ── v3 통합 설치: tokens.css @theme 제거 + 프리셋 존재
+t('integration: v3 install strips theme and drops preset', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ui-install-v3-'));
+  const r = spawnSync(process.execPath, [path.join(here, 'install.mjs'), '--target', root, '--stack', 'react-tailwind3', '--hue', 'blue'], { encoding: 'utf8' });
+  assert.equal(r.status, 0, r.stderr);
+  const tokens = fs.readFileSync(path.join(root, 'src/styles/tokens.css'), 'utf8');
+  assert.ok(!/@theme/.test(tokens), 'v3 tokens.css엔 @theme 없어야');
+  assert.match(tokens, /--ui-color-bg-brand-solid/);
+  assert.ok(fs.existsSync(path.join(root, 'tailwind.ui-preset.cjs')));
+  assert.match(fs.readFileSync(path.join(root, 'DESIGN.md'), 'utf8'), /stack: react-tailwind3/);
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 // ── 통합: 실제 설치 → 훅이 동작하는지

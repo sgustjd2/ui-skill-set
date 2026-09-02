@@ -484,9 +484,11 @@ radius_scale: soft         # sharp | soft | pill
 | **M0 골격** | ✅ 완료 | FR-1~7. DESIGN.md·tokens.css 템플릿, `design-lint.mjs --pre` (R1~R4) + 테스트, settings.json, SKILL.md v0, CLAUDE 스니펫 | 실제 프로젝트 1개에 수동 설치, UI 편집 20회 중 그라데이션·hex 0건 도달 |
 | **M1 룰 완성** | ✅ 완료 | FR-8~11. `--stop`(소프트 S1~S15), `--all`(토큰 커버리지 %), references 5개, `ui-init`(+`--legacy`, `--update`) | 레거시 프로젝트 1개 온보딩, 오탐 ≤ 5% |
 | **M2 배포** | ✅ 완료 | FR-12~13. `.claude-plugin/` 매니페스트, `skills/llms.txt`, README(ko), 골든 프롬프트 5개 + `eval/consistency.mjs` | 다른 작업자가 README만 보고 설치·사용 성공 |
-| **M3 확장** | 진행 중 | FR-15 ✅ Playwright 런타임 감사(`design-audit.mjs`). FR-14 Tailwind v3·FR-16 Figma는 수요 확인 후 | 수요 확인 후 |
+| **M3 확장** | 진행 중 | FR-15 ✅ 런타임 감사. FR-14 ✅ Tailwind v3 브릿지. FR-16 Figma는 수요 확인 후 | 수요 확인 후 |
 
-**테스트**: design-lint 91 + install 13 + audit 24 + consistency 6 = 134개, 전부 통과.
+**테스트**: design-lint 91 + install 19 + audit 24 + consistency 6 = 140개, 전부 통과.
+
+**FR-14 Tailwind v3 브릿지**(2026-09-02): `@theme`는 v4 전용이라 v3는 `tailwind.ui-preset.cjs`(theme.extend 매핑) + `@theme` 제거한 tokens.css를 쓴다. install.mjs가 `--stack react-tailwind3`에서 `stripThemeBlock()`으로 `@theme`를 떼고 프리셋을 설치. 실제 Tailwind v3 CLI 빌드로 검증: `bg-brand-solid`·`text-4`(line-height 짝)·`rounded-control`·`shadow-1`·`hover:` 변형이 v4와 동일하게 `--ui-*` 참조 생성. 프리셋 색 키가 @theme의 `--color-*` 전부를 덮는지 테스트로 강제(드리프트 방지).
 
 **FR-15 런타임 감사**(2026-09-02): 정적 룰이 못 잡는 대비·오버플로·터치타겟·focus-visible·접근이름·alt·구조를 Playwright로 검사. 도그푸딩에서 실제 결함 발견: 기본 accent-600 솔리드+흰 글자 3.95:1, red-700 텍스트 3.76:1 (둘 다 AA 미달). 대응: `fg-brand`·`bg-brand-solid`를 accent-700, `fg-critical`을 red-800로 조정(대비 통과). `bg-critical-solid`는 다크 반전 문제로 red-700 유지.
 

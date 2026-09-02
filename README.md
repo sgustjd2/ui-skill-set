@@ -48,6 +48,8 @@ node /path/to/ui-skill-set/templates/install.mjs --target . --mode operate --sta
 
 레거시 프로젝트는 `--legacy`(하드코딩 색 경고로 시작), 재설치는 `--update`(훅·스킬만 갱신). Claude Code 안에서는 `/ui-init`이 질문 3개로 같은 일을 한다.
 
+**Tailwind v3**는 `--stack react-tailwind3`. `tokens.css`의 `@theme`(v4 전용)를 떼어내고 `tailwind.ui-preset.cjs`를 함께 설치한다. `tailwind.config.js`에 `presets: [require('./tailwind.ui-preset.cjs')]`를 추가하면 `bg-brand-solid`·`text-4`·`rounded-control` 같은 시맨틱 유틸리티가 v4와 똑같이(같은 `--ui-*` 토큰 참조, 다크모드 전환 포함) 동작한다.
+
 플러그인으로도 설치할 수 있다:
 
 ```bash
