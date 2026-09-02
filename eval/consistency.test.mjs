@@ -62,6 +62,19 @@ t('single run, no subdirs', () => {
   fs.rmSync(root, { recursive: true, force: true });
 });
 
+// UI 파일 0개인 하위 폴더(예: styles/)는 실행에서 제외 → 소스 트리를 가리켜도 오작동 안 함
+t('empty subdir ignored (source tree, not runs)', () => {
+  const root = mkRuns({
+    'components/A.tsx': '<div className="bg-brand-solid text-fg-neutral" />',
+    'styles/tokens.css': ':root{--ui-x:1}', // isUiFile이 tokens.css를 건너뜀 → 0 UI 파일
+  });
+  const r = analyzeRuns(root);
+  assert.equal(r.runs.length, 1);       // components 만 실행으로
+  assert.equal(r.multi, false);
+  assert.equal(r.pass, true);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
 // var(--ui-*) 토큰도 집계
 t('css var tokens counted', () => {
   const root = mkRuns({ 'run1/a.css': '.x{color:var(--ui-color-fg-neutral)}', 'run2/a.css': '.x{color:var(--ui-color-fg-neutral)}' });

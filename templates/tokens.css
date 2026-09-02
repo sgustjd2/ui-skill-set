@@ -294,6 +294,22 @@ html {
   --font-sans: var(--ui-font-sans);
   --font-mono: var(--ui-font-mono);
 
+  /* 폰트 스케일 t1~t14 (line-height 짝지음). text-5 = 본문. 기본 text-sm/base 등은 남겨 둔다 */
+  --text-1: var(--ui-text-1);   --text-1--line-height: var(--ui-leading-1);
+  --text-2: var(--ui-text-2);   --text-2--line-height: var(--ui-leading-2);
+  --text-3: var(--ui-text-3);   --text-3--line-height: var(--ui-leading-3);
+  --text-4: var(--ui-text-4);   --text-4--line-height: var(--ui-leading-4);
+  --text-5: var(--ui-text-5);   --text-5--line-height: var(--ui-leading-5);
+  --text-6: var(--ui-text-6);   --text-6--line-height: var(--ui-leading-6);
+  --text-7: var(--ui-text-7);   --text-7--line-height: var(--ui-leading-7);
+  --text-8: var(--ui-text-8);   --text-8--line-height: var(--ui-leading-8);
+  --text-9: var(--ui-text-9);   --text-9--line-height: var(--ui-leading-9);
+  --text-10: var(--ui-text-10); --text-10--line-height: var(--ui-leading-10);
+  --text-11: var(--ui-text-11); --text-11--line-height: var(--ui-leading-11);
+  --text-12: var(--ui-text-12); --text-12--line-height: var(--ui-leading-12);
+  --text-13: var(--ui-text-13); --text-13--line-height: var(--ui-leading-13);
+  --text-14: var(--ui-text-14); --text-14--line-height: var(--ui-leading-14);
+
   --radius-*: initial;
   --radius-control: var(--ui-radius-control);
   --radius-card: var(--ui-radius-card);

@@ -51,7 +51,10 @@ export function analyzeRuns(runsDir, { prefix = 'ui' } = {}) {
     .filter((e) => e.isDirectory() && !SKIP.test(e.name + '/'))
     .map((e) => path.join(runsDir, e.name));
   const runDirs = subdirs.length ? subdirs : [runsDir];
-  const runs = runDirs.map((d) => analyzeRun(d, prefix));
+  const all = runDirs.map((d) => analyzeRun(d, prefix));
+  // UI 파일이 0개인 폴더는 실행이 아니다(빈 폴더가 합집합·Jaccard를 오염시키지 않게).
+  const nonEmpty = all.filter((r) => r.files > 0);
+  const runs = nonEmpty.length ? nonEmpty : all;
 
   const union = new Set();
   for (const r of runs) for (const t of r.tokens) union.add(t);
