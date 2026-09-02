@@ -15,7 +15,9 @@ skills/
   ui-init/                   ← 설치 스킬. install.mjs 를 실행
 templates/                   ← 프로젝트에 복사되는 것
   DESIGN.md                  ← 프로젝트 계약. frontmatter는 린터가 읽음
-  tokens.css                 ← 원색은 이 파일만. 2계층(scale→semantic), light/dark, Tailwind v4 @theme 브릿지
+  tokens.css                 ← 원색은 이 파일만. 프레임워크 무관: 2계층(scale→semantic), light/dark, 전역 규칙
+  theme.css                  ← Tailwind v4 브릿지(@theme). tokens.css 다음에 @import
+  tailwind.ui-preset.cjs     ← Tailwind v3 브릿지(theme.extend). tailwind.config presets 에 추가
   design-lint.mjs            ← 훅. PreToolUse 차단(R1~R4) + Stop 1회 점검(R1~R4 + S1~S15) + --all(CI). 순수 Node ≥18
   install.mjs                ← 설치기. settings.json 병합·frontmatter 채우기·CLAUDE 멱등 추가
   *.test.mjs                 ← node templates/design-lint.test.mjs · node templates/install.test.mjs
@@ -48,7 +50,12 @@ node /path/to/ui-skill-set/templates/install.mjs --target . --mode operate --sta
 
 레거시 프로젝트는 `--legacy`(하드코딩 색 경고로 시작), 재설치는 `--update`(훅·스킬만 갱신). Claude Code 안에서는 `/ui-init`이 질문 3개로 같은 일을 한다.
 
-**Tailwind v3**는 `--stack react-tailwind3`. `tokens.css`의 `@theme`(v4 전용)를 떼어내고 `tailwind.ui-preset.cjs`를 함께 설치한다. `tailwind.config.js`에 `presets: [require('./tailwind.ui-preset.cjs')]`를 추가하면 `bg-brand-solid`·`text-4`·`rounded-control` 같은 시맨틱 유틸리티가 v4와 똑같이(같은 `--ui-*` 토큰 참조, 다크모드 전환 포함) 동작한다.
+**브릿지는 스택별 별도 파일**이고 `tokens.css`는 프레임워크 무관이다. 설치기가 스택에 맞는 것만 넣는다.
+- **Tailwind v4** (`--stack react-tailwind4`, 기본): `theme.css`(@theme)를 `tokens.css` 다음에 `@import`.
+- **Tailwind v3** (`--stack react-tailwind3`): `tailwind.ui-preset.cjs`를 `tailwind.config.js`의 `presets: [require('./tailwind.ui-preset.cjs')]`에 추가.
+- **순수 CSS/기타** (`--stack react-css`, `plain`): 브릿지 없이 `var(--ui-*)` 토큰을 직접 사용.
+
+세 경로 모두 `bg-brand-solid`·`text-4`·`rounded-control` 같은 시맨틱 유틸리티(또는 토큰)가 같은 `--ui-*`를 참조하므로 다크모드 전환이 동일하게 동작한다.
 
 플러그인으로도 설치할 수 있다:
 
@@ -60,7 +67,7 @@ claude plugin marketplace add sgustjd2/ui-skill-set
 
 그다음:
 1. `DESIGN.md` §1~§2를 채운다 (제품 한 줄, 액센트 색). `tokens.css`의 `--ui-accent-*`를 브랜드 램프로 바꾼다.
-2. CSS 엔트리에서 `@import "tailwindcss";` 다음 줄에 `@import "./styles/tokens.css";` (Tailwind가 아니면 그냥 import).
+2. CSS 엔트리: `@import "tailwindcss";` → `@import "./styles/tokens.css";` → (v4면) `@import "./styles/theme.css";`. v3는 config에 preset 추가, 순수 CSS는 tokens.css만.
 3. Pretendard를 셀프호스트하고 `@font-face`를 `tokens.css` 상단에 추가한다.
 4. `<html lang="ko">`에 다크모드 스크립트 한 줄 (tokens.css 주석 참조).
 5. 확인: `node .claude/hooks/design-lint.mjs --all` — 토큰 커버리지와 위반 0 확인.
