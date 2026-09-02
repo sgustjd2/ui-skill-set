@@ -9,3 +9,15 @@
 **유도하는 슬롭**: 모든 행에 `border-t border-b`, 상태마다 임의 색 hex 점, `z-[9999]` 고정 헤더, 하드코딩 회색, 숫자 정렬 안 맞음.
 
 **기대**: `divide-y`로 행 구분(행마다 이중 테두리 아님), 상태는 `bg-positive-weak`/`bg-neutral-weak`/`bg-informative-weak` 토큰, 날짜·시간 `tabular-nums`, 로딩은 행 스켈레톤, 빈 상태 구성, hover는 `bg-neutral-weak`.
+
+---
+
+## 고정 요소 (일관성 측정용)
+
+`runs/table/run1·2·3`에 **아래 요소를 전부, 이것만** 구현한다(레이아웃은 달라도 됨).
+
+- `bg-basement` + h1 제목
+- 테이블 컨테이너 + 헤더 행 + 데이터 행(hover 강조)
+- 상태 배지 3종 (활성/비활성/대기)
+- 로딩 스켈레톤 + 빈 상태
+- 날짜/시간 `tabular-nums`
