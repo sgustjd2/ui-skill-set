@@ -99,10 +99,12 @@ function main() {
 
   if (!fs.existsSync(tpl('DESIGN.md'))) { process.stderr.write(`템플릿을 찾을 수 없습니다: ${here}\n`); process.exit(1); }
 
-  // 항상 갱신: 훅 스크립트 + 스킬
+  // 항상 갱신: 훅 스크립트 + 런타임 감사 + 스킬
   ensure(dst('.claude/hooks/design-lint.mjs'));
   fs.copyFileSync(tpl('design-lint.mjs'), dst('.claude/hooks/design-lint.mjs'));
   log('✓ .claude/hooks/design-lint.mjs');
+  fs.copyFileSync(tpl('design-audit.mjs'), dst('.claude/hooks/design-audit.mjs'));
+  log('✓ .claude/hooks/design-audit.mjs (런타임 감사, playwright 필요)');
   if (fs.existsSync(dst('.claude/skills/ui-design'))) fs.rmSync(dst('.claude/skills/ui-design'), { recursive: true, force: true });
   cpDir(path.join(srcRoot, 'skills', 'ui-design'), dst('.claude/skills/ui-design'));
   log('✓ .claude/skills/ui-design/');

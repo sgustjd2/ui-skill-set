@@ -63,6 +63,17 @@ claude plugin marketplace add sgustjd2/ui-skill-set
 4. `<html lang="ko">`에 다크모드 스크립트 한 줄 (tokens.css 주석 참조).
 5. 확인: `node .claude/hooks/design-lint.mjs --all` — 토큰 커버리지와 위반 0 확인.
 
+## 런타임 감사 (정규식이 못 잡는 것)
+
+하드/소프트 룰은 정적이라 명도 대비·가로 오버플로·터치타겟·`focus-visible` 같은 "렌더링해야 아는" 결함은 못 본다. `design-audit.mjs`가 실행 중인 앱을 Playwright로 열어 검사한다. 편집 훅이 아니라 수동/CI 도구다.
+
+```bash
+npm i -D playwright && npx playwright install chromium   # 최초 1회
+node .claude/hooks/design-audit.mjs http://localhost:5173
+```
+
+뷰포트 375/768/1280에서 검사: 대비 4.5:1(큰 글자 3:1) 미달, 가로 스크롤, `<html lang>`·viewport 누락은 blocker(exit 1); 44px 미만 터치타겟·안 보이는 포커스·이름 없는 버튼·alt 없는 이미지·h1 개수는 warn. playwright가 없으면 안내 후 exit 0(세션·CI를 안 깬다).
+
 ## 일관성 측정
 
 같은 프롬프트를 여러 번 돌려 팔레트·폰트·라디우스가 안 흔들리는지 잰다. 골든 프롬프트 5개는 [eval/prompts/](eval/prompts/), 사용법은 [eval/README.md](eval/README.md).

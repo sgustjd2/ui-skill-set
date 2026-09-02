@@ -130,12 +130,14 @@
   --ui-color-fg-neutral-subtle: var(--ui-gray-700);
   --ui-color-fg-placeholder: var(--ui-gray-600);
   --ui-color-fg-disabled: var(--ui-gray-500);
-  --ui-color-fg-brand: var(--ui-accent-600);
+  /* 흰 글자를 얹는 solid, 흰 배경 위 text 는 4.5:1 을 넘겨야 한다. 그래서 600이 아니라 700.
+     design-audit 로 검증한다. 브랜드 램프를 교체할 때도 이 대비를 지켜야 한다. */
+  --ui-color-fg-brand: var(--ui-accent-700);
   --ui-color-fg-on-brand: var(--ui-gray-00);
   --ui-color-fg-on-solid: var(--ui-gray-00);
-  --ui-color-fg-critical: var(--ui-red-700);
-  --ui-color-fg-positive: var(--ui-green-700);
-  --ui-color-fg-informative: var(--ui-blue-700);
+  --ui-color-fg-critical: var(--ui-red-800);
+  --ui-color-fg-positive: var(--ui-green-800);
+  --ui-color-fg-informative: var(--ui-blue-800);
 
   --ui-color-bg-basement: var(--ui-gray-200);       /* 0단계 대지. 화면 전체 배경 */
   --ui-color-bg-layer-default: var(--ui-gray-00);   /* 1단계. 대부분의 콘텐츠 표면 */
@@ -143,8 +145,8 @@
   --ui-color-bg-neutral-weak: var(--ui-gray-100);
   --ui-color-bg-neutral-weak-pressed: var(--ui-gray-300);
   --ui-color-bg-neutral-solid: var(--ui-gray-1000);
-  --ui-color-bg-brand-solid: var(--ui-accent-600);
-  --ui-color-bg-brand-solid-pressed: var(--ui-accent-700);
+  --ui-color-bg-brand-solid: var(--ui-accent-700);
+  --ui-color-bg-brand-solid-pressed: var(--ui-accent-800);
   --ui-color-bg-brand-weak: var(--ui-accent-100);
   --ui-color-bg-brand-weak-pressed: var(--ui-accent-200);
   --ui-color-bg-critical-solid: var(--ui-red-700);
