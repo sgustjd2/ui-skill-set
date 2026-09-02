@@ -484,9 +484,11 @@ radius_scale: soft         # sharp | soft | pill
 | **M0 골격** | ✅ 완료 | FR-1~7. DESIGN.md·tokens.css 템플릿, `design-lint.mjs --pre` (R1~R4) + 테스트, settings.json, SKILL.md v0, CLAUDE 스니펫 | 실제 프로젝트 1개에 수동 설치, UI 편집 20회 중 그라데이션·hex 0건 도달 |
 | **M1 룰 완성** | ✅ 완료 | FR-8~11. `--stop`(소프트 S1~S15), `--all`(토큰 커버리지 %), references 5개, `ui-init`(+`--legacy`, `--update`) | 레거시 프로젝트 1개 온보딩, 오탐 ≤ 5% |
 | **M2 배포** | ✅ 완료 | FR-12~13. `.claude-plugin/` 매니페스트, `skills/llms.txt`, README(ko), 골든 프롬프트 5개 + `eval/consistency.mjs` | 다른 작업자가 README만 보고 설치·사용 성공 |
-| **M3 확장** | 진행 중 | FR-15 ✅ 런타임 감사. FR-14 ✅ Tailwind v3 브릿지. FR-16 Figma는 수요 확인 후 | 수요 확인 후 |
+| **M3 확장** | ✅ 완료 | FR-14 ✅ Tailwind v3 브릿지. FR-15 ✅ 런타임 감사. FR-16 ✅ Figma 동기화 | |
 
-**테스트**: design-lint 91 + install 19 + audit 24 + consistency 6 = 140개, 전부 통과.
+**테스트**: design-lint 91 + install 20 + audit 24 + consistency 6 + figma 17 = 158개, 전부 통과.
+
+**FR-16 Figma 토큰 동기화**(2026-09-02): `figma-sync.mjs`가 Figma 변수(색 팔레트, Light/Dark 모드)를 REST로 읽어 tokens.css의 scale 색 토큰을 갱신한다. 색만 대상(gray/accent/red/green/blue 램프), 시맨틱·간격·라디우스는 안 건드림. 순수 로직(hexFromFigma/parseFigmaVariables/applyToTokensCss)은 실제 API 응답 형태 픽스처로 17개 테스트. dry-run 기본, `--write`로 반영. Variables API는 Enterprise 전용이라 403이면 플러그인 export를 `--from <json>`으로 받는다. FIGMA_TOKEN 없으면 안내 후 exit 0(CI 안 깸). 니치라 install에 자동 포함 안 하고 checkout에서 실행.
 
 **FR-14 Tailwind v3 브릿지 + 브릿지 분리 구조**(2026-09-02): 브릿지를 스택별 별도 파일로 분리했다. `tokens.css`는 프레임워크 무관(변수·다크·전역 규칙만), `theme.css`가 v4 `@theme` 브릿지, `tailwind.ui-preset.cjs`가 v3 `theme.extend` 프리셋. install.mjs가 스택에 맞는 파일만 설치(v4→theme.css, v3→preset, react-css/plain→없음). 실제 빌드로 양쪽 검증: v4는 별도 theme.css의 @theme가 vite+@tailwindcss/vite에서 유틸리티로 컴파일(기본 팔레트 제거·다크 반전 유지), v3는 Tailwind v3 CLI에서 preset이 동일 유틸리티 생성. 프리셋 색 키가 theme.css의 `--color-*` 전부를 덮는지 테스트로 강제(드리프트 방지). 병렬 편집 충돌로 잠깐 깨졌다가 이 구조로 정리.
 

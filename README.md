@@ -83,6 +83,19 @@ node .claude/hooks/design-audit.mjs http://localhost:5173
 
 뷰포트 375/768/1280에서 검사: 대비 4.5:1(큰 글자 3:1) 미달, 가로 스크롤, `<html lang>`·viewport 누락은 blocker(exit 1); 44px 미만 터치타겟·안 보이는 포커스·이름 없는 버튼·alt 없는 이미지·h1 개수는 warn. playwright가 없으면 안내 후 exit 0(세션·CI를 안 깬다).
 
+## Figma 토큰 동기화 (선택)
+
+디자이너가 Figma 변수로 색 팔레트(라이트/다크 모드)를 관리하면, `figma-sync.mjs`가 그 값을 `tokens.css`의 scale 색 토큰(`--ui-gray-*`·`--ui-accent-*`·`--ui-red/green/blue-*`)에 반영한다. 색만 대상이고 간격·라디우스·타이포는 코드에 둔다. 시맨틱 토큰은 안 건드린다.
+
+```bash
+FIGMA_TOKEN=xxxx node /path/to/ui-skill-set/templates/figma-sync.mjs --file <fileKey> --tokens ./src/styles/tokens.css        # dry-run
+FIGMA_TOKEN=xxxx node .../figma-sync.mjs --file <fileKey> --tokens ./src/styles/tokens.css --write                            # 반영
+```
+
+Figma 변수 이름은 `gray/500`·`accent/600` 규칙을 따라야 `--ui-<ramp>-<step>`에 매핑된다. 모드는 이름의 light/dark(또는 라이트/다크)로, 없으면 기본 모드=light. 기본은 dry-run(변경만 출력), `--write`로 반영하고 그 뒤 `design-audit`으로 대비를 재확인한다.
+
+주의: Figma Variables REST API는 **Enterprise 플랜 전용**이다. 그 외 플랜은 403이 나므로 플러그인으로 변수를 JSON export 해 `--from <export.json>`으로 넘긴다. `FIGMA_TOKEN`이 없으면 안내 후 그냥 건너뛴다.
+
 ## 일관성 측정
 
 같은 프롬프트를 여러 번 돌려 팔레트·폰트·라디우스가 안 흔들리는지 잰다. 골든 프롬프트 5개는 [eval/prompts/](eval/prompts/), 사용법은 [eval/README.md](eval/README.md).
