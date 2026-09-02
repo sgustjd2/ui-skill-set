@@ -1,0 +1,22 @@
+{
+  "name": "ui-skill-set",
+  "description": "프로젝트에 설치하면 작업자와 무관하게 일관된 UI가 나오고, AI 기본 미학(보라 그라데이션·글래스·이모지 아이콘·하드코딩 색)을 편집 전에 차단한다. 토큰·규칙·훅 3계층. 한국어 타이포 기본값 포함.",
+  "version": "0.1.0",
+  "author": {
+    "name": "sgustjd2"
+  },
+  "homepage": "https://github.com/sgustjd2/ui-skill-set",
+  "repository": "https://github.com/sgustjd2/ui-skill-set",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "design",
+    "ui",
+    "design-tokens",
+    "design-system",
+    "anti-slop",
+    "tailwind",
+    "korean"
+  ],
+  "skills": "./skills/"
+}

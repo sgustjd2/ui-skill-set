@@ -333,6 +333,15 @@ function walk(dir, root, acc = []) {
 // 색·폰트 선언 중 토큰을 쓴 비율. 분모 = 토큰 사용 + 하드 색/폰트 위반(R1~R4)
 const SEMANTIC_UTIL = /\b(?:bg|text|border|ring|fill|stroke|from|via|to|divide|outline)-(?:fg-[\w-]+|on-[\w-]+|brand(?:-[\w-]+)?|neutral-(?:weak|solid|muted)[\w-]*|critical(?:-[\w-]+)?|positive(?:-[\w-]+)?|informative(?:-[\w-]+)?|layer-[\w-]+|basement|disabled|overlay|stroke-[\w-]+)\b|\bfont-(?:sans|mono)\b|\brounded-(?:control|card|sheet)\b|\bshadow-[123]\b/g;
 
+/** 파일에서 실제 사용된 토큰 식별자를 뽑는다(var(--prefix-…) 이름 + 시맨틱 유틸 클래스). eval/consistency.mjs 가 씀. */
+export function extractTokens(content, prefix = 'ui') {
+  const out = [];
+  const varRe = new RegExp(`--${prefix}-[a-z0-9-]+`, 'gi');
+  for (const m of content.matchAll(varRe)) out.push(m[0].toLowerCase());
+  for (const m of content.matchAll(SEMANTIC_UTIL)) out.push(m[0]);
+  return out;
+}
+
 export function runAll(cfg, root) {
   const files = walk(root, root);
   const all = [];

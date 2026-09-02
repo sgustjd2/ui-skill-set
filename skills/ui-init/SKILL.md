@@ -32,10 +32,12 @@ allowed-tools:
 
 ## 3. 설치 실행
 
-설치기 경로를 찾는다. 이 스킬은 `skills/ui-init/`에 있고 설치기는 `templates/install.mjs`에 있다(둘 다 ui-skill-set 루트 아래, 플러그인이면 플러그인 루트). 스킬 디렉토리에서 두 단계 위가 루트다.
+설치기 경로를 찾는다. 설치기는 ui-skill-set 루트의 `templates/install.mjs`에 있다.
+- 플러그인으로 설치된 경우: `${CLAUDE_PLUGIN_ROOT}/templates/install.mjs`.
+- 저장소를 직접 클론한 경우: 그 저장소의 `templates/install.mjs` (이 스킬 디렉토리 `skills/ui-init/`에서 두 단계 위).
 
 ```bash
-node <ui-skill-set 루트>/templates/install.mjs --target . --mode <mode> --stack <stack> --hue <hue>
+node "${CLAUDE_PLUGIN_ROOT:-<ui-skill-set 루트>}/templates/install.mjs" --target . --mode <mode> --stack <stack> --hue <hue>
 ```
 
 레거시: `--legacy` 추가. 업데이트: `--update`만(질문 생략).

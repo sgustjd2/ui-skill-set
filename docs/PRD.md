@@ -4,7 +4,7 @@
 |---|---|
 | 버전 | 0.1 (초안) |
 | 작성일 | 2026-09-02 |
-| 상태 | **결정 대기** (§11의 6개 항목 확정 시 M0 착수) |
+| 상태 | **M0~M2 구현 완료** (2026-09-02). 결정 D1~D6은 추천값으로 확정. 남은 것은 실제 프로젝트 도그푸딩 |
 | 저장소 | `sgustjd2/ui-skill-set` |
 | 근거 자료 | `docs/research/` (레퍼런스 4개 정밀 분석) |
 
@@ -479,12 +479,14 @@ radius_scale: soft         # sharp | soft | pill
 
 ## 10. 마일스톤
 
-| | 기간 | 산출물 | 완료 조건 |
+| | 상태 | 산출물 | 완료 조건 |
 |---|---|---|---|
-| **M0 골격** | 1주 | FR-1~7. DESIGN.md·tokens.css 템플릿, `design-lint.mjs --pre` (R1~R4) + 테스트, settings.json, SKILL.md v0, CLAUDE 스니펫 | 실제 프로젝트 1개에 수동 설치, UI 편집 20회 중 그라데이션·hex 0건 도달 |
-| **M1 룰 완성** | 1주 | FR-8~11. `--stop`, `--all`, references 5개, `/ui-init`(+`--legacy`, `--update`) | 레거시 프로젝트 1개 온보딩, 오탐 ≤ 5% |
-| **M2 배포** | 3일 | FR-12~13. 플러그인 매니페스트, README(ko), 골든 프롬프트 + 일관성 스크립트 | 다른 작업자가 README만 보고 설치·사용 성공 |
+| **M0 골격** | ✅ 완료 | FR-1~7. DESIGN.md·tokens.css 템플릿, `design-lint.mjs --pre` (R1~R4) + 테스트, settings.json, SKILL.md v0, CLAUDE 스니펫 | 실제 프로젝트 1개에 수동 설치, UI 편집 20회 중 그라데이션·hex 0건 도달 |
+| **M1 룰 완성** | ✅ 완료 | FR-8~11. `--stop`(소프트 S1~S15), `--all`(토큰 커버리지 %), references 5개, `ui-init`(+`--legacy`, `--update`) | 레거시 프로젝트 1개 온보딩, 오탐 ≤ 5% |
+| **M2 배포** | ✅ 완료 | FR-12~13. `.claude-plugin/` 매니페스트, `skills/llms.txt`, README(ko), 골든 프롬프트 5개 + `eval/consistency.mjs` | 다른 작업자가 README만 보고 설치·사용 성공 |
 | **M3 확장** | 선택 | FR-14~16. Tailwind v3, Playwright 감사, Figma 동기화 | 수요 확인 후 |
+
+**테스트**: design-lint 91 + install 13 + consistency 5 = 109개, 전부 통과.
 
 ---
 

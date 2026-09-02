@@ -1,0 +1,26 @@
+{
+  "name": "ui-skill-set",
+  "description": "일관된 UI를 강제하는 스킬 세트 — 디자인 토큰, 안티슬롭 규칙, 편집 전 차단 훅",
+  "owner": {
+    "name": "sgustjd2"
+  },
+  "plugins": [
+    {
+      "name": "ui-skill-set",
+      "description": "프로젝트에 설치하면 누가 작업해도 같은 토큰·규칙·검사로 UI가 나온다. ui-design(작업 스킬)과 ui-init(설치 스킬)을 제공한다.",
+      "version": "0.1.0",
+      "source": "./",
+      "author": {
+        "name": "sgustjd2"
+      },
+      "keywords": [
+        "design",
+        "ui",
+        "design-tokens",
+        "anti-slop",
+        "korean"
+      ],
+      "category": "design"
+    }
+  ]
+}
