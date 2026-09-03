@@ -65,6 +65,8 @@ claude plugin marketplace add sgustjd2/ui-skill-set
 
 그러면 `/plugin install ui-skill-set@ui-skill-set`으로 `ui-design`·`ui-init` 스킬이 들어온다. Cursor·Codex 등은 `npx skills add https://github.com/sgustjd2/ui-skill-set`. 어느 경로든 실제 강제는 `ui-init`이 프로젝트에 커밋하는 훅이 한다.
 
+> 설치 검증됨(2026-09-03, Claude Code 2.1.237): 위 명령으로 GitHub에서 마켓플레이스 추가 → 플러그인 설치 → 컴포넌트 인벤토리에 Skills 2개(ui-design·ui-init) 노출 확인. 훅·에이전트 0은 의도된 것(훅은 ui-init이 프로젝트에 넣는다).
+
 그다음:
 1. `DESIGN.md` §1~§2를 채운다 (제품 한 줄, 액센트 색). `tokens.css`의 `--ui-accent-*`를 브랜드 램프로 바꾼다.
 2. CSS 엔트리: `@import "tailwindcss";` → `@import "./styles/tokens.css";` → (v4면) `@import "./styles/theme.css";`. v3는 config에 preset 추가, 순수 CSS는 tokens.css만.
