@@ -169,6 +169,133 @@ claude plugin marketplace add sgustjd2/ui-skill-set
 
 ---
 
+## 기존 프로젝트 업데이트 (0.1 → 0.2)
+
+0.2는 [2026-09 동향 조사](docs/research/2026-09-trends.md)를 반영한 버전이다. `--update`는 **훅과 스킬만** 바꾸고, 프로젝트가 소유한 파일(`DESIGN.md`·`tokens.css`·`theme.css`/프리셋)은 건드리지 않는다. 그래서 두 단계로 옮긴다.
+
+### 1단계: 훅·스킬 갱신 (자동)
+
+```bash
+node /path/to/ui-skill-set/templates/install.mjs --target . --update
+```
+
+Claude Code 안이면 `/ui-init --update`. 이걸로 `.claude/hooks/`(design-lint·design-audit·tokens-contrast)와 `.claude/skills/ui-design/`이 0.2가 된다. `settings.json`·`CLAUDE.md`는 0.2에서 바뀐 게 없어 손댈 필요가 없다.
+
+> 플러그인만 업데이트하면 스킬만 새것이 되고 **훅은 0.1 그대로**다. 훅은 프로젝트에 있으므로 이 단계를 꼭 한다.
+
+**먼저 CI 영향부터 본다.** 하드 룰이 넓어져서(아래 표) 전에는 통과하던 코드가 `--all`에서 exit 1이 될 수 있다. 커밋 전에 돌려서 확인한다:
+
+```bash
+node .claude/hooks/design-lint.mjs --all
+```
+
+| 새로 잡히는 하드 위반 | 고치는 법 |
+|---|---|
+| `bg-linear-(--x)` 축약 문법 (R1) | 단색 토큰, 또는 `ui-lint-allow gradient: <이유>` |
+| `bg-mauve-*`·`olive`·`mist`·`taupe`, `scrollbar-thumb-*`·`text-shadow-*` 색 (R3) | 시맨틱 토큰 (`bg-neutral-weak` 등) |
+| `hwb()`, `color(display-p3 …)`, `light-dark(white, black)` (R3) | tokens.css로 옮기고 `var(--ui-…)` |
+| `font-[Open_Sans]`, `font-(family-name:--x)` (R4) | `font-sans` |
+| DESIGN.md `font_families`에 없는 `next/font/google`·`@fontsource/*` import (R4) | 쓰는 폰트면 `font_families`에 선언, 아니면 제거 |
+
+반대로 `color-mix(in oklab, var(--ui-…) 20%, transparent)`처럼 토큰에서 파생한 색은 0.1에서 오탐이었고 이제 통과한다.
+
+> **1단계만 하고 커밋하지 않는다.** 새 `tokens-contrast`는 0.1 `tokens.css`의 placeholder(라이트 3.42:1)를 미달로 잡아 exit 1을 낸다. CI에 이 검사가 있으면 빨간불이 들어온다. 2단계 tokens.css ①까지 하고 같이 커밋한다.
+
+### 2단계: 프로젝트 파일 반영 (수동)
+
+| 파일 | 할 일 | 필수? |
+|---|---|---|
+| `src/styles/theme.css` (v4) | 브레이크포인트·그림자 네임스페이스·`dark:` 변형 추가 | 권장. 단 브레이크포인트는 아래 주의 |
+| `tailwind.ui-preset.cjs` (v3) | `screens`·`darkMode` 추가 | 권장. 같은 주의 |
+| `src/styles/tokens.css` | placeholder 대비, 고대비 대응, text-wrap | **placeholder는 필수**(WCAG 미달) |
+| `DESIGN.md` | `copy_register` 한 줄 | 선택. 없으면 `auto`(혼용만 지적) |
+
+**theme.css (Tailwind v4).** 직접 고친 적이 없으면 통째로 교체한다:
+
+```bash
+cp /path/to/ui-skill-set/templates/theme.css src/styles/theme.css
+```
+
+고친 적이 있으면 `@theme inline { … }` 안 `--shadow-3` 줄 아래에 이것을 넣고,
+
+```css
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+
+  --breakpoint-*: initial;
+  --breakpoint-sm: 30rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 80rem;
+  --breakpoint-xl: 90rem;
+```
+
+`@theme` 블록 **밖**, 파일 맨 끝에 이것을 넣는다:
+
+```css
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+```
+
+**tailwind.ui-preset.cjs (Tailwind v3).** 직접 고친 적이 없으면 템플릿으로 교체한다. 고쳤으면 `module.exports`에 `darkMode: ['selector', '[data-theme="dark"]']`를 넣고, `theme` 안(`extend` 밖)에 `screens: { sm: '480px', md: '768px', lg: '1280px', xl: '1440px' }`를 넣는다.
+
+> **⚠ 브레이크포인트는 화면이 바뀐다.** 0.1에서는 DESIGN.md §4의 480/1280/1440이 실제로 적용되지 않고 Tailwind 기본값(640/1024/1280/1536)이 쓰이고 있었다. 새 값을 넣으면 `sm:`은 640→480px, `lg:`는 1024→1280px, `xl:`은 1280→1440px에서 켜지고 `2xl:`은 **사라진다**.
+> - 새 프로젝트이거나 화면이 적으면: 넣고 375/768/1280에서 한 번 훑는다. `2xl:`을 쓰는 곳은 `grep -rn "2xl:" src`로 찾아 `xl:`로 바꾼다.
+> - 화면이 이미 기본값에 맞춰져 있으면: 브레이크포인트 블록(`--breakpoint-*` 5줄, v3의 `screens`)만 **빼고**, 대신 DESIGN.md §4를 실제 값(sm 640 · md 768 · lg 1024 · xl 1280 · 2xl 1536)으로 고친다. 계약과 실제가 같기만 하면 된다.
+
+**tokens.css.** 세 군데:
+
+```css
+/* ① :root 안 — placeholder도 텍스트라 4.5:1 (0.1의 gray-700은 라이트에서 3.42:1로 미달) */
+--ui-color-fg-placeholder: var(--ui-gray-800);
+
+/* ② @media (prefers-reduced-motion) 블록 바로 위 — 고대비 요청 시 한 단계 진하게 */
+@media (prefers-contrast: more) {
+  :root {
+    --ui-color-fg-neutral-subtle: var(--ui-gray-800);
+    --ui-color-stroke-neutral: var(--ui-gray-600);
+  }
+}
+
+/* ③ 파일 끝 전역 규칙 옆 — 제목 줄 균형, 본문 외톨이 방지 */
+:where(h1, h2, h3, h4) { text-wrap: balance; }
+:where(p, li, figcaption, blockquote) { text-wrap: pretty; }
+```
+
+①은 placeholder가 보조 텍스트(`fg-neutral-muted`)와 같은 색이 된다는 뜻이다. 입력값과 헷갈리지 않게 하는 건 색이 아니라 내용(예시 형식만)으로 한다. ③은 제목 줄바꿈 위치가 바뀔 수 있으니 긴 제목이 있는 화면을 한 번 본다. 반영한 뒤:
+
+```bash
+node .claude/hooks/tokens-contrast.mjs --tokens src/styles/tokens.css
+```
+
+**DESIGN.md.** frontmatter에 한 줄 추가:
+
+```yaml
+copy_register: haeyo      # 해요체 제품. 합니다체면 hamnida. 줄이 없으면 auto(한 파일 안의 혼용만 지적)
+```
+
+원하면 본문에도 옮긴다(템플릿 [templates/DESIGN.md](templates/DESIGN.md) 참고): §3 카피 한 줄, §4 safe area 한 줄, §7 `user-invalid:`와 "닫기 vs 취소" 두 줄.
+
+### 3단계: 확인·커밋
+
+```bash
+node .claude/hooks/design-lint.mjs --all
+node .claude/hooks/tokens-contrast.mjs --tokens src/styles/tokens.css
+node .claude/hooks/design-audit.mjs http://localhost:5173    # dev 서버가 떠 있으면
+git add .claude DESIGN.md src/styles/tokens.css src/styles/theme.css && git commit -m "chore: ui-skill-set 0.2"
+```
+
+Tailwind v3면 `theme.css` 대신 `tailwind.ui-preset.cjs`를 add한다.
+
+design-audit는 0.2에서 blocker가 늘었다. 24px 미만 타겟(WCAG 2.5.8, 모든 뷰포트)과 확대 차단(`user-scalable=no`·`maximum-scale=1`)이 새로 exit 1을 낸다. 또 계산된 색이 `oklab()`으로 오던 요소(Tailwind v4의 `/opacity` 등)를 0.1은 대비 검사에서 **조용히 건너뛰었다.** 0.2에서 처음으로 대비 미달이 보일 수 있는데, 새로 생긴 문제가 아니라 원래 있던 결함이다.
+
+### 팀원이 체감하는 변화
+
+- **종료 전 점검(Stop)이 조용해진다.** 이번 세션에서 추가·수정한 줄만 지적하고, 규칙은 4종까지 묶어서 보여 준다(접근성 먼저). 레거시 파일의 기존 부채는 `--all`에서만 보인다.
+- **소프트 룰 8개가 늘었다.** 임의값 `p-[13px]`(대체 클래스 제안), 확대 차단, 크기·여백 전이, `dark:` 분기, CTA 끝 `→`, `<div onClick>`, aria-label 불일치, 존댓말 혼용. 정당한 경우는 기존처럼 `/* ui-lint-allow <id>: <이유> */`.
+- 한글 파일명(`src/화면/설정.tsx` 등)이 Stop 검사에서 빠지던 문제가 고쳐졌다. 그래서 전에는 안 보이던 지적이 나올 수 있다.
+
+---
+
 ## 검사 도구 요약
 
 전부 순수 Node(≥18), 의존성 0(런타임 감사만 playwright 선택). 언제 쓰나:
@@ -257,7 +384,7 @@ node eval/consistency.mjs runs/01-settings --roles      # 역할별(코어) 일�
 | Tailwind v3 | `react-tailwind3` | `tailwind.ui-preset.cjs` | config에 `presets: [require('./tailwind.ui-preset.cjs')]` + tokens.css import |
 | 순수 CSS/기타 | `react-css` · `plain` | 없음 | tokens.css만 import, `var(--ui-*)` 직접 사용 |
 
-세 경로 모두 `bg-brand-solid`·`text-4`·`rounded-control`(또는 `var(--ui-*)`)가 같은 `--ui-*`를 참조하므로 다크모드 전환이 동일하게 동작한다. 재설치는 `--update`(훅·스킬만 갱신, tokens.css·DESIGN.md 보존).
+세 경로 모두 `bg-brand-solid`·`text-4`·`rounded-control`(또는 `var(--ui-*)`)가 같은 `--ui-*`를 참조하므로 다크모드 전환이 동일하게 동작한다. 재설치는 `--update`(훅·스킬만 갱신, tokens.css·DESIGN.md 보존). 버전을 올릴 때 프로젝트 파일에 옮길 것은 [기존 프로젝트 업데이트](#기존-프로젝트-업데이트-01--02)를 본다.
 
 ### 저장소 구조
 
