@@ -5,7 +5,7 @@ description: >
   프로젝트의 DESIGN.md와 tokens.css만으로 구현하고, 그라데이션·하드코딩 색·이모지 아이콘 같은
   AI 기본 미학을 피한다. 색·타이포·간격·라디우스·그림자·모션·상태·접근성·한국어 타이포 포함.
   백엔드 전용·비UI 작업에는 사용하지 않는다.
-version: 0.3.0
+version: 0.4.0
 user-invocable: true
 argument-hint: "[화면 또는 컴포넌트 설명]"
 allowed-tools:
@@ -18,12 +18,12 @@ allowed-tools:
 
 ## 0. 전제
 
-프로젝트 루트에 `DESIGN.md`가 있어야 한다. 없으면 UI 작업을 시작하지 말고 이렇게 답한다:
+편집할 파일에서 가장 가까운 `DESIGN.md`(보통 프로젝트 루트, 모노레포면 앱 폴더)가 있어야 한다. 없으면 UI 작업을 시작하지 말고 이렇게 답한다:
 > "이 프로젝트에 DESIGN.md가 없습니다. ui-skill-set 설치(README의 수동 설치 6단계, 또는 `/ui-init`) 후 진행할게요."
 
 ## 1. 읽기 (코드 전, 항상)
 
-1. `DESIGN.md` 전체를 읽는다. frontmatter의 `mode_default`, `dials`, `gradient_policy`, `radius_scale`, §8 예외 표를 특히 본다.
+1. `DESIGN.md` 전체를 읽는다. frontmatter의 `mode_default`, `dials`, `gradient_policy`, `radius_scale`, `copy_register`와 맨 아래 예외 표(`## Do's and Don'ts`, 0.4 이전 템플릿은 §8)를 특히 본다. frontmatter 아래쪽의 `colors:` 같은 hex 값은 다른 도구용 사본이다. 코드에는 토큰만 쓴다.
 2. `tokens_path`의 토큰 파일에서 **semantic 이름**을 확인한다 (`--{prefix}-color-{fg|bg|stroke}-…`, `--{prefix}-radius-{control|card|sheet}`, `--{prefix}-shadow-1…3`, `--{prefix}-duration-*`, `--{prefix}-ease-*`). Tailwind면 `@theme` 블록의 유틸리티 이름.
 3. 이미 있는 화면 하나를 연다. 기존 패턴(버튼, 카드, 폼)이 있으면 그것이 기준이다. 새로 발명하지 않는다.
 
@@ -52,7 +52,7 @@ allowed-tools:
 
 규칙 요약 (본문은 references):
 - **토큰만.** 원색·`font-family` 직접 지정·Tailwind 기본 팔레트 클래스는 훅이 차단한다. 차단되면 우회하지 말고 토큰으로 고친다. `p-[13px]` 같은 임의값도 스케일로.
-- **액센트 1색, 라디우스 스케일 1종, 그림자 ≤ 3개 요소.** DESIGN.md §2, §5.
+- **액센트 1색, 라디우스 스케일 1종, 그림자 ≤ 3개 요소.** DESIGN.md Colors · Shapes · Elevation & Depth.
 - **상태 5종을 같이 만든다**: hover · disabled · loading(스켈레톤) · error · empty. "성공 상태만"은 미완성이다.
 - **CTA는 화면당 1개.** 같은 의도의 버튼을 두 개 두지 않는다.
 - **아이콘은 라이브러리 1종**, 이모지·유니코드 글리프는 아이콘이 아니다.
@@ -72,12 +72,12 @@ allowed-tools:
 
 사용자가 명시적으로 요구한 것(특정 색, 그라데이션, 폰트, 스타일)은 이 스킬의 기본값보다 우선한다. 다만:
 1. 그것이 하드 룰에 걸리면 **먼저 한 줄로 확인**한다: "DESIGN.md 정책상 기본 금지입니다. 예외로 기록하고 진행할까요?"
-2. 승인되면 해당 파일에 `/* ui-lint-allow <rule>: <이유> */`를 넣고 DESIGN.md §8 표에 한 줄 추가한다.
+2. 승인되면 해당 파일에 `/* ui-lint-allow <rule>: <이유> */`를 넣고 DESIGN.md 예외 표에 한 줄 추가한다.
 3. 이유 없는 마커, 훅 비활성화, 토큰 파일 밖의 원색 추가는 승인이 있어도 하지 않는다. 대신 토큰 파일에 토큰을 추가한다.
 
 ## 6. 하지 않는 것
 
-- DESIGN.md를 무시하거나 임의로 고치기 (§8 예외 표 제외)
+- DESIGN.md를 무시하거나 임의로 고치기 (예외 표 제외)
 - 새 아이콘 라이브러리·폰트·색 램프를 묻지 않고 추가하기
 - 한 화면에서 라이트/다크 섹션을 섞기
 - "나중에 채움" 플레이스홀더 컴포넌트, div로 만든 가짜 스크린샷

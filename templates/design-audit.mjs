@@ -38,6 +38,23 @@ export function composite(fg, bg) {
   if (a >= 1) return fg;
   return { r: fg.r * a + bg.r * (1 - a), g: fg.g * a + bg.g * (1 - a), b: fg.b * a + bg.b * (1 - a), a: 1 };
 }
+/**
+ * APCA Lc (SAPC-APCA 0.0.98G-4g, APCA-W3 0.1.9 상수). **판정용이 아니다**: WCAG 3 초안에서 빠졌고 법적 기준은
+ * WCAG 2.2 대비비다. 참고값으로만 보여 준다. 양수 = 밝은 배경 위 어두운 글자, 음수 = 반대. 권장(seed-design):
+ * 본문 |Lc| ≥ 75, 그 외 텍스트 ≥ 60, placeholder·비활성 ≥ 30.
+ */
+export function apcaLc(txt, bg) {
+  const y = ({ r, g, b }) => {
+    const v = 0.2126729 * (r / 255) ** 2.4 + 0.7151522 * (g / 255) ** 2.4 + 0.0721750 * (b / 255) ** 2.4;
+    return v < 0.022 ? v + (0.022 - v) ** 1.414 : v; // 검정 근처 소프트 클램프
+  };
+  const yt = y(txt), yb = y(bg);
+  if (Math.abs(yb - yt) < 0.0005) return 0;
+  if (yb > yt) { const s = (yb ** 0.56 - yt ** 0.57) * 1.14; return s < 0.1 ? 0 : (s - 0.027) * 100; }
+  const s = (yb ** 0.65 - yt ** 0.62) * 1.14;
+  return s > -0.1 ? 0 : (s + 0.027) * 100;
+}
+
 /** 큰 글자(≥24px, 또는 ≥18.66px+bold)면 3.0, 아니면 4.5. */
 export function contrastThreshold(fontSizePx, bold) {
   return fontSizePx >= 24 || (fontSizePx >= 18.66 && bold) ? 3.0 : 4.5;
@@ -169,7 +186,7 @@ export function evaluate(data, vw) {
     const need = contrastThreshold(t.fontSize, t.weight >= 700);
     if (ratio + 0.05 < need) {
       contrastFails++;
-      if (contrastFails <= 6) add('blocker', 'low-contrast', `대비 ${ratio.toFixed(2)}:1 < ${need} — "${t.sample}" (${Math.round(t.fontSize)}px)`);
+      if (contrastFails <= 6) add('blocker', 'low-contrast', `대비 ${ratio.toFixed(2)}:1 < ${need} (APCA Lc ${apcaLc(composite(fg, bgc), bgc).toFixed(0)}, 참고) — "${t.sample}" (${Math.round(t.fontSize)}px)`);
     }
   }
   if (contrastFails > 6) add('blocker', 'low-contrast', `… 외 대비 미달 ${contrastFails - 6}건`);

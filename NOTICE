@@ -29,6 +29,10 @@ guidance; ideas are paraphrased, no code or text was copied:
   aesthetics (cream/terracotta, trailing arrows, meta strings, sparkles icon).
 - vercel-labs/web-interface-guidelines (MIT): zoom-disabled, div onClick checks.
 - shadcn-ui/lint (MIT): arbitrary-value check and exact-fix error messages.
+- google-labs-code/design.md (Apache-2.0, v0.4.0): DESIGN.md section names and the
+  frontmatter token schema that templates/design-md-sync.mjs emits (format compatibility only).
+- APCA contrast (apca-w3, SAPC-APCA 0.0.98G-4g constants): reference-only Lc in
+  templates/design-audit.mjs; not used for pass/fail.
 - daangn/seed-design (Apache-2.0, commits 29b709b, 4706130): font-stack order
   finding and safe-area layout guidance.
 - Toss public articles and guides (toss.tech, developers-apps-in-toss.toss.im): UX

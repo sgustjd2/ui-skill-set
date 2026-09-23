@@ -17,6 +17,14 @@ t('template tokens.css passes all pairs (light+dark)', () => {
   assert.deepEqual(failures.map((f) => `${f.mode} ${f.desc}`), [], failures.map((f) => `${f.mode} ${f.desc}: ${f.ratio?.toFixed(2)}<${f.min}`).join('; '));
 });
 
+// ── APCA는 참고값: 결과에 실리지만 pass 판정은 WCAG만
+t('results carry APCA Lc and target, pass is WCAG-only', () => {
+  const { results } = checkTokensContrast(fs.readFileSync(path.join(here, 'tokens.css'), 'utf8'));
+  const body = results.find((r) => r.mode === 'light' && r.desc === '본문');
+  assert.ok(Math.abs(body.lc) > 90 && body.lcMin === 75, `본문 Lc ${body.lc}`);
+  assert.ok(results.every((r) => typeof r.lc === 'number'));
+});
+
 // ── 깨진 팔레트(흰 글자 on 밝은 배경)는 잡아야 한다
 t('detects low contrast (white on light)', () => {
   const bad = `:root {

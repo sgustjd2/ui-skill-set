@@ -165,8 +165,14 @@
   --ui-color-stroke-critical: var(--ui-red-700);
   --ui-color-stroke-focus: var(--ui-accent-600);
 
-  /* 유일한 그라데이션 토큰. 스켈레톤 시머 전용 */
+  /* 그라데이션 토큰은 이 둘뿐. ① 스켈레톤 시머 */
   --ui-gradient-shimmer: linear-gradient(90deg, var(--ui-gray-100) 0%, var(--ui-gray-200) 50%, var(--ui-gray-100) 100%);
+  /* ② 스크롤 가장자리 페이드 마스크. mask-image 전용(알파만 쓰므로 라이트·다크 무관). 2단 선형은 경계에 띠가 보여서
+     smoothstep 8단 이징 (seed-design --seed-gradient-fade-mask #1760 방식). 사용: mask-image: var(--ui-gradient-fade-x) */
+  --ui-fade-size: 24px;
+  --ui-fade-stops: rgb(0 0 0 / 0) 0, rgb(0 0 0 / 0.055) calc(var(--ui-fade-size) * 0.143), rgb(0 0 0 / 0.198) calc(var(--ui-fade-size) * 0.286), rgb(0 0 0 / 0.394) calc(var(--ui-fade-size) * 0.429), rgb(0 0 0 / 0.606) calc(var(--ui-fade-size) * 0.571), rgb(0 0 0 / 0.802) calc(var(--ui-fade-size) * 0.714), rgb(0 0 0 / 0.945) calc(var(--ui-fade-size) * 0.857), rgb(0 0 0 / 1) var(--ui-fade-size), rgb(0 0 0 / 1) calc(100% - var(--ui-fade-size)), rgb(0 0 0 / 0.945) calc(100% - var(--ui-fade-size) * 0.857), rgb(0 0 0 / 0.802) calc(100% - var(--ui-fade-size) * 0.714), rgb(0 0 0 / 0.606) calc(100% - var(--ui-fade-size) * 0.571), rgb(0 0 0 / 0.394) calc(100% - var(--ui-fade-size) * 0.429), rgb(0 0 0 / 0.198) calc(100% - var(--ui-fade-size) * 0.286), rgb(0 0 0 / 0.055) calc(100% - var(--ui-fade-size) * 0.143), rgb(0 0 0 / 0) 100%;
+  --ui-gradient-fade-x: linear-gradient(to right, var(--ui-fade-stops));
+  --ui-gradient-fade-y: linear-gradient(to bottom, var(--ui-fade-stops));
 
   /* radius 역할 — DESIGN.md radius_scale: soft 기준. sharp면 0, pill이면 control=full */
   --ui-radius-control: var(--ui-radius-2);   /* 버튼·인풋·칩 */

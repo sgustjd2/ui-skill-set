@@ -51,7 +51,7 @@ node /path/to/ui-skill-set/templates/install.mjs --target . --mode operate --sta
 - `src/styles/tokens.css`의 `--ui-accent-100…900`을 **브랜드 색 램프**로 바꾼다(기본값은 채도 낮은 파랑 플레이스홀더).
   - 액센트 색조가 보라 계열이면 `DESIGN.md` frontmatter의 `brand_hue: purple`로 바꿔 AI-purple 룰(R2)이 오탐하지 않게 한다.
 - Pretendard Variable을 셀프호스트하고 `@font-face`를 tokens.css 상단에 추가한다(폰트 스택은 이미 tokens.css에 있다).
-- `DESIGN.md` §1~§2(제품 한 줄, 액센트 색 설명)를 채운다.
+- `DESIGN.md`의 Overview·Colors(제품 한 줄, 액센트 색 설명)를 채운다.
 
 ### 3. CSS 엔트리에서 import
 
@@ -127,6 +127,8 @@ Claude는 이 메시지를 받아 **토큰으로 고쳐서** 다시 저장한다
 node .claude/hooks/tokens-contrast.mjs --tokens src/styles/tokens.css
 ```
 
+대비가 통과하면 DESIGN.md의 design.md 호환 토큰도 갱신한다: `node .claude/hooks/design-md-sync.mjs`.
+
 primary 버튼의 흰 글자가 액센트 배경 위에서 4.5:1을 넘어야 한다. 밝은 색을 골랐다면 `--ui-color-bg-brand-solid`가 `--ui-accent-700`처럼 한 단계 어두운 스텝을 가리키게 조정한다(기본 매핑이 그렇게 되어 있다). 이 검사가 "버튼 글자가 안 보이는" 흔한 사고를 커밋 전에 잡는다.
 
 디자이너가 Figma 변수로 팔레트를 관리한다면 [Figma 동기화](#figma-토큰-동기화)로 자동 반영할 수 있다.
@@ -151,6 +153,7 @@ git add .claude DESIGN.md src/styles/tokens.css CLAUDE.md && git commit -m "chor
 # 예: GitHub Actions 한 스텝
 - run: node .claude/hooks/design-lint.mjs --all        # 하드 위반 시 exit 1
 - run: node .claude/hooks/tokens-contrast.mjs --tokens src/styles/tokens.css
+- run: node .claude/hooks/design-md-sync.mjs --check        # DESIGN.md 토큰이 tokens.css와 같은지
 ```
 
 - 레거시 코드가 많은 프로젝트는 `--legacy`로 설치해 `hardcoded_color: warn`·`tailwind_palette: allow`로 시작하고, `DESIGN.md`에서 점진적으로 `block`/`deny`로 조인다.
@@ -171,7 +174,22 @@ claude plugin marketplace add sgustjd2/ui-skill-set
 
 ## 기존 프로젝트 업데이트
 
-`--update`(또는 `/ui-init --update`)는 **훅과 스킬만** 바꾸고, 프로젝트가 소유한 파일(`DESIGN.md`·`tokens.css`·`theme.css`/프리셋)은 건드리지 않는다. 버전마다 손으로 옮길 것을 아래에 적는다. 0.1에서 올라오면 **0.1 → 0.2를 먼저**, 그다음 0.2 → 0.3을 한다.
+`--update`(또는 `/ui-init --update`)는 **훅과 스킬만** 바꾸고, 프로젝트가 소유한 파일(`DESIGN.md`·`tokens.css`·`theme.css`/프리셋)은 건드리지 않는다. 버전마다 손으로 옮길 것을 아래에 적는다. 0.1에서 올라오면 **0.1 → 0.2 → 0.3 → 0.4 순서**로 한다.
+
+### 0.3 → 0.4
+
+깨지는 변경은 없다. `--update` 뒤 원하는 것만 고른다.
+
+```bash
+node /path/to/ui-skill-set/templates/install.mjs --target . --update    # 훅에 design-md-sync.mjs 추가, --stats·모노레포·APCA 포함
+```
+
+| 선택 | 할 일 |
+|---|---|
+| design.md(Stitch) 호환 | `node .claude/hooks/design-md-sync.mjs` 한 번. frontmatter 끝에 `version`·`name`·`colors`·`typography`·`rounded`·`spacing`이 붙는다. 섹션 제목까지 맞추려면 [템플릿](templates/DESIGN.md)처럼 `## 1. 제품과 모드` → `## Overview`, `## 2. 색` → `## Colors`, `## 3. 타이포` → `## Typography`, `## 4. 레이아웃·간격` → `## Layout`, `## 5. 형태·깊이` → `## Elevation & Depth` + `## Shapes`, `## 6. 모션` → `## Motion`, `## 7. 컴포넌트 규약` → `## Components`, `## 8. 금지와 허용 예외` → `## Do's and Don'ts`. 린터는 제목을 읽지 않으니 안 바꿔도 동작한다. 그다음 CI에 `design-md-sync.mjs --check` |
+| 모노레포 | 앱마다 `install.mjs --target apps/<앱> --app`. 기존 루트 DESIGN.md는 그대로 기본값이 된다. 앱 DESIGN.md에는 `ui_skill_set:` 줄이 있어야 인정된다 |
+| 스크롤 가장자리 페이드 | tokens.css `--ui-gradient-shimmer` 아래에 `--ui-fade-size`·`--ui-fade-stops`·`--ui-gradient-fade-x`·`--ui-gradient-fade-y` 네 줄을 [템플릿](templates/tokens.css)에서 복사. 사용: `[mask-image:var(--ui-gradient-fade-x)]` |
+| 발동 통계 | 할 일 없음. 이제부터 `.claude/ui-lint/`에 쌓이고 `design-lint.mjs --stats`로 본다 |
 
 ### 0.2 → 0.3
 
@@ -340,12 +358,39 @@ design-audit는 0.2에서 blocker가 늘었다. 24px 미만 타겟(WCAG 2.5.8, �
 | 도구 | 언제 | 명령 |
 |---|---|---|
 | `design-lint --all` | 커밋 전·CI. 하드/소프트 룰 + 토큰 커버리지 | `node .claude/hooks/design-lint.mjs --all` |
-| `tokens-contrast` | 브랜드 색 바꾼 뒤·CI. 시맨틱 색 쌍 WCAG(정적) | `node .claude/hooks/tokens-contrast.mjs --tokens src/styles/tokens.css` |
+| `tokens-contrast` | 브랜드 색 바꾼 뒤·CI. 시맨틱 색 쌍 WCAG(정적). `--apca`면 APCA Lc 참고값 표 | `node .claude/hooks/tokens-contrast.mjs --tokens src/styles/tokens.css` |
+| `design-md-sync` | 브랜드 색 바꾼 뒤·CI(`--check`). DESIGN.md의 design.md 호환 토큰을 tokens.css에서 생성 | `node .claude/hooks/design-md-sync.mjs` |
+| `design-lint --stats` | 규칙이 실제로 지켜지는지 볼 때. 규칙별 차단·수정·예외·포기와 수정률 | `node .claude/hooks/design-lint.mjs --stats` |
 | `design-audit` | dev 서버 떠 있을 때. 대비·오버플로·터치타겟(런타임) | `node .claude/hooks/design-audit.mjs http://localhost:5173` |
 | `consistency` | 같은 화면 여러 번 만든 결과의 토큰 일치도 | `node eval/consistency.mjs <runsDir> --roles` |
 | `figma-sync` | Figma 변수 → tokens.css 색 반영 | `FIGMA_TOKEN=… node templates/figma-sync.mjs --file <key> --tokens …` |
 
 - **`design-lint`(정적)** = 문자열로 잡히는 것. **`design-audit`(런타임)** = 렌더링해야 아는 것(대비 등). **`tokens-contrast`(정적)** = 런타임 감사가 못 보는 조합(빈 placeholder 등)까지 토큰 레벨에서. 셋이 사각지대를 메운다.
+
+### 모노레포
+
+앱마다 디자인이 다르면(마케팅 사이트는 그라데이션 허용, 어드민은 금지 등) 앱 폴더마다 DESIGN.md를 둔다. 린터는 **편집하는 파일에서 가장 가까운 DESIGN.md**를 적용하고, 없으면 루트 것을 쓴다.
+
+```bash
+node /path/to/ui-skill-set/templates/install.mjs --target . --stack react-tailwind4                 # 저장소 루트: 훅·스킬·settings 한 번
+node /path/to/ui-skill-set/templates/install.mjs --target apps/admin --stack react-tailwind4 --app  # 앱마다: DESIGN.md·tokens.css·브릿지만
+```
+
+앱 DESIGN.md의 `tokens_path`는 앱 폴더 기준이다. 하위 폴더의 DESIGN.md는 frontmatter에 `ui_skill_set:`이 있을 때만 인정한다(API 설계 문서 같은 다른 DESIGN.md를 오인하지 않게).
+
+### 규칙 발동 통계
+
+훅이 차단·지적할 때마다 `.claude/ui-lint/log.jsonl`에 한 줄 남긴다(폴더가 스스로 gitignore). 그 뒤 같은 파일이 통과하면 "수정", 마커로 풀면 "예외", 3회 연속 차단 후 통과시키면 "포기"로 기록한다. 종료 전 지적은 다음 종료 때 남은 수와 비교한다.
+
+```bash
+node .claude/hooks/design-lint.mjs --stats
+```
+
+수정률이 낮거나 예외가 많은 규칙은 메시지가 모호하거나 규칙이 틀렸다는 신호다(토스 기술블로그 "AI가 팀 규칙을 지키도록", 2026-09). 끄려면 DESIGN.md `lint_log: off` 또는 `UI_LINT_LOG=0`.
+
+### design.md(Stitch) 호환
+
+DESIGN.md의 섹션 제목(Overview·Colors·Typography·Layout·Elevation & Depth·Shapes·Components·Do's and Don'ts)과 frontmatter 아래쪽 토큰(`colors`·`typography`·`rounded`·`spacing`)은 [google-labs-code/design.md](https://github.com/google-labs-code/design.md) 포맷을 따른다. 그래서 Stitch 같은 도구와 다른 에이전트도 같은 계약을 읽는다(공식 CLI `npx @google/design.md lint DESIGN.md` 오류 0·경고 0, `export --format css-tailwind`도 동작). 토큰의 원본은 tokens.css이고, 브랜드 색을 바꾼 뒤 `design-md-sync`로 다시 생성한다. CI에는 `--check`를 넣어 둘이 어긋나지 않게 한다.
 
 ### 런타임 감사 상세
 
@@ -365,7 +410,7 @@ FIGMA_TOKEN=xxxx node templates/figma-sync.mjs --file <fileKey> --tokens ./src/s
 FIGMA_TOKEN=xxxx node templates/figma-sync.mjs --file <fileKey> --tokens ./src/styles/tokens.css --write # 반영
 ```
 
-변수 이름은 `gray/500`·`accent/600` 규칙을 따라야 `--ui-<ramp>-<step>`에 매핑된다. 반영 뒤 `tokens-contrast`로 대비를 재확인한다. 참고: Variables REST API는 **Figma Enterprise 전용**이라 그 외 플랜은 플러그인 export를 `--from <export.json>`으로 넘긴다. `FIGMA_TOKEN`이 없으면 건너뛴다.
+변수 이름은 `gray/500`·`accent/600` 규칙을 따라야 `--ui-<ramp>-<step>`에 매핑된다. 반영 뒤 `tokens-contrast`로 대비를 재확인하고 `design-md-sync`로 DESIGN.md 토큰을 갱신한다. 참고: Variables REST API는 **Figma Enterprise 전용**이라 그 외 플랜은 플러그인 export를 `--from <export.json>`으로 넘긴다. `FIGMA_TOKEN`이 없으면 건너뛴다.
 
 ### 일관성 측정
 
@@ -385,7 +430,7 @@ node eval/consistency.mjs runs/01-settings --roles      # 역할별(코어) 일�
 브리프가 이긴다 — 사용자가 명시적으로 요구한 것은 룰보다 우선한다. 단 근거를 파일에 남겨야 한다.
 
 1. 파일에 마커(**이유 필수**): `/* ui-lint-allow gradient: 브랜드 히어로, 승인됨 */`
-2. `DESIGN.md` §8 "허용 예외" 표에 한 줄 기록.
+2. `DESIGN.md` 맨 아래 Do's and Don'ts의 "허용 예외" 표에 한 줄 기록(0.4 이전 템플릿은 §8).
 3. 스킬은 예외를 추가하기 전에 사용자에게 한 줄로 확인한다.
 
 이유 없는 마커·훅 비활성화·tokens.css 밖의 원색 추가는 예외로 인정되지 않는다. 같은 파일·같은 룰로 3회 연속 차단되면 4번째는 경고로 통과한다(데드락 방지).
@@ -439,7 +484,8 @@ templates/                   ← 프로젝트에 복사되는 것
   tailwind.ui-preset.cjs     ← Tailwind v3 브릿지(theme.extend)
   design-lint.mjs            ← 편집 훅 + CI 린터
   design-audit.mjs           ← 런타임 감사(playwright)
-  tokens-contrast.mjs        ← 정적 대비 검사
+  tokens-contrast.mjs        ← 정적 대비 검사(+ APCA 참고값)
+  design-md-sync.mjs         ← tokens.css → DESIGN.md의 design.md 호환 토큰
   figma-sync.mjs             ← Figma 변수 → tokens.css
   install.mjs                ← 설치기
   settings.json · CLAUDE.snippet.md
@@ -447,7 +493,7 @@ eval/                        ← 골든 프롬프트 + 일관성 측정 + 실측
 docs/                        ← PRD + 레퍼런스 분석(2026-09 업계 동향 반영 포함)
 ```
 
-DESIGN.md frontmatter(린터가 읽는 정책): `mode_default` · `stack` · `token_prefix` · `brand_hue` · `font_families` · `gradient_policy` · `tailwind_palette` · `hardcoded_color` · `radius_scale` · `copy_register`(`haeyo` 기본 · `hamnida` · `auto`=혼용만 지적, `--legacy` 설치 시 auto).
+DESIGN.md frontmatter(린터가 읽는 정책): `mode_default` · `stack` · `token_prefix` · `brand_hue` · `font_families` · `gradient_policy` · `tailwind_palette` · `hardcoded_color` · `radius_scale` · `copy_register`(`haeyo` 기본 · `hamnida` · `auto`=혼용만 지적, `--legacy` 설치 시 auto) · `lint_log`(`off`면 발동 로그 끔). `ui_skill_set`은 이 파일이 우리 계약이라는 표시(모노레포 하위 폴더 판별), `name`·`version`·`colors`… 는 design.md 포맷 키.
 
 ---
 
@@ -458,6 +504,7 @@ node templates/design-lint.test.mjs        # 하드/소프트 룰
 node templates/install.test.mjs            # 설치기
 node templates/design-audit.test.mjs       # 런타임 감사 대비 수학
 node templates/tokens-contrast.test.mjs    # 정적 대비
+node templates/design-md-sync.test.mjs     # design.md 호환 토큰 생성·드리프트
 node templates/figma-sync.test.mjs         # Figma 파싱/반영
 node eval/consistency.test.mjs             # 일관성 측정 로직
 ```

@@ -4,9 +4,11 @@
  *
  * ui-skill-set을 대상 프로젝트에 설치한다. 순수 Node ≥18, 의존성 0.
  *   node install.mjs --target <dir> [--mode operate] [--hue blue] [--stack react-tailwind4]
- *                    [--tokens-path src/styles/tokens.css] [--legacy] [--update] [--force]
+ *                    [--tokens-path src/styles/tokens.css] [--legacy] [--update] [--force] [--app]
+ * --app    : 모노레포 앱 폴더. 계약 파일(DESIGN.md·tokens.css·브릿지)만 넣는다. 훅·스킬·settings·CLAUDE.md는
+ *            저장소 루트에 한 번(일반 설치). 린터는 편집 파일에서 가장 가까운 DESIGN.md를 쓴다.
  * --legacy : 레거시 프로젝트. tailwind_palette=allow, hardcoded_color=warn, copy_register=auto(기존 존댓말 유지, 혼용만 지적)로 시작(점진 전환).
- * --update : design-lint.mjs 와 skills/ui-design 만 갱신. DESIGN.md·tokens.css·settings.json·CLAUDE.md 는 보존.
+ * --update : .claude/hooks/* 와 skills/ui-design 만 갱신. DESIGN.md·tokens.css·settings.json·CLAUDE.md 는 보존.
  * --force  : 이미 있는 DESIGN.md/tokens.css 도 덮어쓴다.
  *
  * 병합/채우기 로직은 export 되어 테스트된다(install.test.mjs). 파일 I/O는 main()에서만.
@@ -79,7 +81,7 @@ function parseArgs(argv) {
     const a = argv[i];
     if (!a.startsWith('--')) continue;
     const k = a.slice(2);
-    if (['legacy', 'update', 'force'].includes(k)) o[k] = true;
+    if (['legacy', 'update', 'force', 'app'].includes(k)) o[k] = true;
     else { o[k] = argv[++i]; }
   }
   return o;
@@ -99,18 +101,23 @@ function main() {
   const ensure = (p) => fs.mkdirSync(path.dirname(p), { recursive: true });
 
   if (!fs.existsSync(tpl('DESIGN.md'))) { process.stderr.write(`템플릿을 찾을 수 없습니다: ${here}\n`); process.exit(1); }
+  fs.mkdirSync(target, { recursive: true }); // --app 등 아직 없는 폴더를 대상으로 줄 때
 
-  // 항상 갱신: 훅 스크립트 + 런타임 감사 + 스킬
-  ensure(dst('.claude/hooks/design-lint.mjs'));
-  fs.copyFileSync(tpl('design-lint.mjs'), dst('.claude/hooks/design-lint.mjs'));
-  log('✓ .claude/hooks/design-lint.mjs');
-  fs.copyFileSync(tpl('design-audit.mjs'), dst('.claude/hooks/design-audit.mjs'));
-  log('✓ .claude/hooks/design-audit.mjs (런타임 감사, playwright 필요)');
-  fs.copyFileSync(tpl('tokens-contrast.mjs'), dst('.claude/hooks/tokens-contrast.mjs'));
-  log('✓ .claude/hooks/tokens-contrast.mjs (토큰 대비 정적 검사)');
-  if (fs.existsSync(dst('.claude/skills/ui-design'))) fs.rmSync(dst('.claude/skills/ui-design'), { recursive: true, force: true });
-  cpDir(path.join(srcRoot, 'skills', 'ui-design'), dst('.claude/skills/ui-design'));
-  log('✓ .claude/skills/ui-design/');
+  // 항상 갱신: 훅 스크립트 + 런타임 감사 + 스킬 (--app은 루트에 이미 있으므로 건너뜀)
+  if (!a.app) {
+    ensure(dst('.claude/hooks/design-lint.mjs'));
+    fs.copyFileSync(tpl('design-lint.mjs'), dst('.claude/hooks/design-lint.mjs'));
+    log('✓ .claude/hooks/design-lint.mjs');
+    fs.copyFileSync(tpl('design-audit.mjs'), dst('.claude/hooks/design-audit.mjs'));
+    log('✓ .claude/hooks/design-audit.mjs (런타임 감사, playwright 필요)');
+    fs.copyFileSync(tpl('tokens-contrast.mjs'), dst('.claude/hooks/tokens-contrast.mjs'));
+    log('✓ .claude/hooks/tokens-contrast.mjs (토큰 대비 정적 검사)');
+    fs.copyFileSync(tpl('design-md-sync.mjs'), dst('.claude/hooks/design-md-sync.mjs'));
+    log('✓ .claude/hooks/design-md-sync.mjs (DESIGN.md의 design.md 호환 토큰 생성)');
+    if (fs.existsSync(dst('.claude/skills/ui-design'))) fs.rmSync(dst('.claude/skills/ui-design'), { recursive: true, force: true });
+    cpDir(path.join(srcRoot, 'skills', 'ui-design'), dst('.claude/skills/ui-design'));
+    log('✓ .claude/skills/ui-design/');
+  }
 
   if (a.update) {
     log('업데이트 완료(--update): 훅과 스킬만 갱신. DESIGN.md·tokens.css·settings.json·CLAUDE.md 는 보존.');
@@ -123,7 +130,7 @@ function main() {
   } else {
     let md = fs.readFileSync(tpl('DESIGN.md'), 'utf8');
     md = fillFrontmatter(md, {
-      mode_default: a.mode, stack: a.stack, tokens_path: tokensPath,
+      name: path.basename(target), mode_default: a.mode, stack: a.stack, tokens_path: tokensPath,
       brand_hue: a.hue, legacy: a.legacy,
     });
     fs.writeFileSync(dst('DESIGN.md'), md);
@@ -150,6 +157,13 @@ function main() {
     else { fs.copyFileSync(tpl('theme.css'), themeDst); log(`✓ ${path.posix.join(path.dirname(tokensPath).replace(/\\/g, '/'), 'theme.css')}`); }
   }
 
+  if (a.app) {
+    log('');
+    log('앱 설치 완료(--app): 계약 파일만 넣었습니다. 훅·스킬·settings.json은 저장소 루트에 일반 설치로 한 번.');
+    log(`  린터는 이 폴더 아래 파일에 ${path.relative(process.cwd(), dst('DESIGN.md')) || 'DESIGN.md'} 를 적용합니다(가장 가까운 DESIGN.md).`);
+    return;
+  }
+
   // settings.json 병합
   const sp = dst('.claude/settings.json');
   ensure(sp);
@@ -166,7 +180,7 @@ function main() {
 
   log('');
   log('다음 단계:');
-  log(`  1. DESIGN.md §1~§2 를 채우고, ${tokensPath} 의 --ui-accent-* 를 브랜드 색으로 교체`);
+  log(`  1. DESIGN.md Overview·Colors 를 채우고, ${tokensPath} 의 --ui-accent-* 를 브랜드 색으로 교체 → tokens-contrast.mjs 로 대비, design-md-sync.mjs 로 DESIGN.md 토큰 갱신`);
   const relTok = tokensPath.replace(/^src\//, './');
   const relTheme = relTok.replace(/[^/]+$/, 'theme.css');
   if (isV3) {

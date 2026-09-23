@@ -6,6 +6,8 @@
  *   --pre   PreToolUse(Edit|Write|MultiEdit): stdin JSON의 제안 내용 검사 → 위반 시 stderr + exit 2 (차단)
  *   --stop  Stop: 작업 트리 변경 파일 검사 → 위반 시 {"decision":"block"} 한 번 (stop_hook_active면 통과)
  *   --all   CI: 저장소 전체 UI 파일 검사 → 위반 시 exit 1
+ *   --stats 발동 로그(.claude/ui-lint/log.jsonl) → 규칙별 차단·수정·예외·포기와 수정률
+ * 설정은 편집하는 파일에서 가장 가까운 DESIGN.md (모노레포면 앱 폴더마다, 없으면 루트).
  * 룰·예외·메시지: docs/PRD.md §7. 어떤 내부 오류도 세션을 깨지 않는다 (최상위 catch → exit 0).
  * 정규식 일부는 impeccable(pbakaus, Apache-2.0)에서 가져옴. NOTICE 참조.
  */
@@ -55,6 +57,86 @@ export function loadConfig(root) {
   const p = path.join(root, 'DESIGN.md');
   if (!fs.existsSync(p)) return null; // 설치 안 된 프로젝트 → no-op
   return { ...DEFAULTS, ...parseFrontmatter(fs.readFileSync(p, 'utf8')) };
+}
+
+/**
+ * 파일에서 가장 가까운 DESIGN.md(위로 올라가며 root에서 멈춤). 모노레포는 앱 폴더마다 계약을 둔다. 없으면 null.
+ * 하위 폴더의 DESIGN.md는 frontmatter에 ui_skill_set 키가 있을 때만 인정한다(API 설계 문서·다른 도구의 design.md 오인 방지).
+ */
+export function configFor(root, rel, cache = new Map()) {
+  const top = path.resolve(root);
+  let dir = path.dirname(path.resolve(top, rel));
+  for (;;) {
+    if (!cache.has(dir)) {
+      const p = path.join(dir, 'DESIGN.md');
+      const fm = fs.existsSync(p) ? parseFrontmatter(fs.readFileSync(p, 'utf8')) : null;
+      cache.set(dir, fm && (fm.ui_skill_set || dir === top) ? { ...DEFAULTS, ...fm, _dir: path.relative(top, dir).replace(/\\/g, '/') } : null);
+    }
+    if (cache.get(dir)) return cache.get(dir);
+    const up = path.dirname(dir);
+    if (dir === top || up === dir || path.relative(top, up).startsWith('..')) return null;
+    dir = up;
+  }
+}
+/** 저장소 루트 기준 tokens_path. 앱 DESIGN.md의 tokens_path는 앱 폴더 기준으로 적혀 있다 */
+const tokensRel = (cfg) => (cfg._dir ? path.posix.join(cfg._dir, cfg.tokens_path) : cfg.tokens_path);
+
+// ─── 발동 로그: 지적한 규칙이 실제로 고쳐졌는지 재는 데이터 (토스 기술블로그 2026-09-08) ───────────
+// .claude/ui-lint/log.jsonl, 폴더가 자기 자신을 gitignore 한다. 끄기: DESIGN.md lint_log: off 또는 UI_LINT_LOG=0
+const LOG_MAX = 1 << 20; // ponytail: 1MB 넘으면 .1로 한 번 돌린다. 더 긴 보존이 필요하면 날짜별 파일로
+const logOn = (cfg) => process.env.UI_LINT_LOG !== '0' && cfg?.lint_log !== 'off';
+function logEvent(root, cfg, ev) {
+  if (!logOn(cfg)) return;
+  try {
+    const dir = path.join(root, '.claude', 'ui-lint');
+    fs.mkdirSync(dir, { recursive: true });
+    const gi = path.join(dir, '.gitignore');
+    if (!fs.existsSync(gi)) fs.writeFileSync(gi, '*\n');
+    const p = path.join(dir, 'log.jsonl');
+    try { if (fs.statSync(p).size > LOG_MAX) fs.renameSync(p, `${p}.1`); } catch { /* 첫 기록 */ }
+    fs.appendFileSync(p, JSON.stringify({ t: new Date().toISOString(), ...ev }) + '\n');
+  } catch { /* 로그 실패로 훅을 깨지 않는다 */ }
+}
+
+/** 로그 → 규칙별 통계. 편집 전: 차단 → 해결(수정·예외) 또는 포기. 종료 전: 지적 수 → 다음 종료 때 남은 수 */
+export function statsFromLog(text) {
+  const S = {};
+  const r = (id) => (S[id] ??= { blocks: 0, fixed: 0, allowed: 0, gaveup: 0, stopFired: 0, stopFixed: 0 });
+  let lastStop = null;
+  for (const line of String(text).split(/\r?\n/)) {
+    let e; try { e = JSON.parse(line); } catch { continue; }
+    if (e.ev === 'block') for (const id of e.rules) r(id).blocks++;
+    else if (e.ev === 'resolved') { for (const id of e.fixed ?? []) r(id).fixed++; for (const id of e.allowed ?? []) r(id).allowed++; }
+    else if (e.ev === 'gaveup') for (const id of e.rules) r(id).gaveup++;
+    else if (e.ev === 'stop-block') lastStop = e.rules;
+    else if (e.ev === 'stop-after' && lastStop) {
+      for (const [id, n] of Object.entries(lastStop)) { r(id).stopFired += n; r(id).stopFixed += Math.max(0, n - (e.rules[id] ?? 0)); }
+      lastStop = null;
+    }
+  }
+  return S;
+}
+
+export function formatStats(S) {
+  const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '-');
+  const ids = Object.keys(S);
+  if (!ids.length) return '[ui-lint] 발동 기록 없음 (.claude/ui-lint/log.jsonl)';
+  const L = ['[ui-lint] 규칙 발동 통계 (.claude/ui-lint/log.jsonl)'];
+  const pre = ids.filter((id) => S[id].blocks).sort((a, b) => S[b].blocks - S[a].blocks);
+  if (pre.length) {
+    L.push('  편집 전 차단            차단  수정  예외  포기  수정률  해결당 차단');
+    for (const id of pre) {
+      const s = S[id], done = s.fixed + s.allowed + s.gaveup;
+      L.push(`  ${id.padEnd(22)} ${String(s.blocks).padStart(4)}  ${String(s.fixed).padStart(4)}  ${String(s.allowed).padStart(4)}  ${String(s.gaveup).padStart(4)}  ${pct(s.fixed, done).padStart(6)}  ${done ? (s.blocks / done).toFixed(1).padStart(8) : '       -'}`);
+    }
+  }
+  const stop = ids.filter((id) => S[id].stopFired).sort((a, b) => S[b].stopFired - S[a].stopFired);
+  if (stop.length) {
+    L.push('  종료 전 지적            지적  고침  고침률');
+    for (const id of stop) L.push(`  ${id.padEnd(22)} ${String(S[id].stopFired).padStart(4)}  ${String(S[id].stopFixed).padStart(4)}  ${pct(S[id].stopFixed, S[id].stopFired).padStart(6)}`);
+  }
+  L.push('  수정률이 낮거나 예외가 많은 규칙은 메시지가 모호하거나 규칙이 틀렸다는 신호다.');
+  return L.join('\n');
 }
 
 // ─── 파일 분류 ───────────────────────────────────────────────────────────────
@@ -183,7 +265,7 @@ function markers(text) {
 function fixes(cfg) {
   const p = cfg.token_prefix;
   return {
-    gradient: `단색 토큰으로 (bg-brand-solid / var(--${p}-color-bg-brand-solid)). 브랜드 근거가 있으면 파일에 /* ui-lint-allow gradient: <이유> */ 를 넣고 DESIGN.md §8에 기록`,
+    gradient: `단색 토큰으로 (bg-brand-solid / var(--${p}-color-bg-brand-solid)). 브랜드 근거가 있으면 파일에 /* ui-lint-allow gradient: <이유> */ 를 넣고 DESIGN.md 예외 표에 기록`,
     'ai-purple': `AI 기본 보라. 브랜드 토큰으로 (text-fg-brand / bg-brand-solid). 브랜드가 실제로 보라면 DESIGN.md brand_hue: purple`,
     'hardcoded-color': `시맨틱 토큰으로: var(--${p}-color-{fg|bg|stroke}-…) 또는 text-fg-* / bg-* / border-stroke-*. 목록: ${cfg.tokens_path}. 원색은 그 파일에서만`,
     'hardcoded-font': `var(--${p}-font-sans) / font-sans 로. Google Fonts <link> 금지(셀프호스트). 새 폰트는 DESIGN.md font_families에 먼저 선언`,
@@ -297,7 +379,7 @@ export function lint(content, filePath, cfg = DEFAULTS, { existing = '', soft = 
 }
 
 // ─── 출력 ────────────────────────────────────────────────────────────────────
-const FOOTER = '규칙: 우회 금지, 토큰으로 수정. 예외가 꼭 필요하면 `/* ui-lint-allow <rule>: <이유> */` + DESIGN.md §8 기록 (먼저 사용자에게 1줄로 확인).';
+const FOOTER = '규칙: 우회 금지, 토큰으로 수정. 예외가 꼭 필요하면 `/* ui-lint-allow <rule>: <이유> */` + DESIGN.md 예외 표 기록 (먼저 사용자에게 1줄로 확인).';
 
 export function format(findings, { max = 8, relative = false } = {}) {
   const lines = [];
@@ -332,20 +414,32 @@ export function runPre(input, cfg, root) {
   else return null;
   const abs = path.resolve(root, file);
   const rel = path.relative(root, abs).replace(/\\/g, '/');
-  if (rel.startsWith('..') || !isUiFile(rel, content, cfg.tokens_path) || Buffer.byteLength(content) > MAX_BYTES) return null;
+  if (rel.startsWith('..')) return null;
+  cfg = configFor(root, rel) ?? cfg; // 모노레포: 가장 가까운 DESIGN.md
+  if (!cfg || !isUiFile(rel, content, tokensRel(cfg)) || Buffer.byteLength(content) > MAX_BYTES) return null;
 
-  const findings = lint(content, rel, cfg, { existing: safeRead(abs) }).filter((f) => f.tier === 'hard' && f.severity === 'block');
+  const existing = safeRead(abs);
+  const findings = lint(content, rel, cfg, { existing }).filter((f) => f.tier === 'hard' && f.severity === 'block');
   const state = readState(root);
+  const now = new Set(findings.map((f) => f.id));
+  // 직전 차단 규칙 중 이번에 사라진 것 = 해결. 마커로 풀었으면 예외(allowed)
+  const gone = (state[rel]?.sig ? state[rel].sig.split(',') : []).filter((id) => !now.has(id));
+  if (gone.length) {
+    const mk = new Set([...markers(content), ...markers(existing)]);
+    logEvent(root, cfg, { ev: 'resolved', file: rel, fixed: gone.filter((id) => !mk.has(id)), allowed: gone.filter((id) => mk.has(id)) });
+  }
   if (!findings.length) { if (state[rel]) { delete state[rel]; writeState(root, state); } return null; }
 
-  const sig = findings.map((f) => f.id).sort().join(',');
+  const sig = [...now].sort().join(',');
   const prev = state[rel]?.sig === sig ? state[rel].n : 0;
   state[rel] = { sig, n: prev + 1 };
   writeState(root, state);
   if (prev >= 3) {
     delete state[rel]; writeState(root, state);
-    return { pass: true, warn: `[ui-lint] ${rel}: 같은 위반(${sig}) ${prev}회 연속 차단 → 이번은 통과시킵니다. 예외면 마커 + DESIGN.md §8, 아니면 토큰으로 고치세요.` };
+    logEvent(root, cfg, { ev: 'gaveup', file: rel, rules: [...now] });
+    return { pass: true, warn: `[ui-lint] ${rel}: 같은 위반(${sig}) ${prev}회 연속 차단 → 이번은 통과시킵니다. 예외면 마커 + DESIGN.md 예외 표, 아니면 토큰으로 고치세요.` };
   }
+  logEvent(root, cfg, { ev: 'block', file: rel, rules: [...now] });
   const isEdit = typeof ti.content !== 'string';
   return {
     pass: false,
@@ -391,28 +485,37 @@ export function formatGrouped(findings, { maxRules = 4 } = {}) {
   return lines.join('\n');
 }
 
-export function lintFiles(files, cfg, root, { soft = false } = {}) {
+export function lintFiles(files, cfg, root, { soft = false, cache = new Map() } = {}) {
   const all = [];
   for (const f of files) {
+    const fc = configFor(root, f, cache) ?? cfg; // 모노레포: 파일마다 가장 가까운 DESIGN.md
+    if (!fc) continue;
     const abs = path.join(root, f);
     let st; try { st = fs.statSync(abs); } catch { continue; }
     if (!st.isFile() || st.size > MAX_BYTES) continue;
     const c = fs.readFileSync(abs, 'utf8');
-    if (!isUiFile(f, c, cfg.tokens_path)) continue;
-    for (const x of lint(c, f, cfg, { soft })) all.push({ file: f.replace(/\\/g, '/'), ...x });
+    if (!isUiFile(f, c, tokensRel(fc))) continue;
+    for (const x of lint(c, f, fc, { soft })) all.push({ file: f.replace(/\\/g, '/'), ...x });
   }
   return all;
 }
 
+const countIds = (fs_) => fs_.reduce((o, f) => ((o[f.id] = (o[f.id] ?? 0) + 1), o), {});
+
 export function runStop(input, cfg, root) {
-  if (input?.stop_hook_active) return null; // 이미 한 번 지적함 → 통과
-  const files = changedFiles(root);
-  const all = lintFiles(files, cfg, root, { soft: true });
+  const cache = new Map();
+  const files = changedFiles(root).filter((f) => configFor(root, f, cache) ?? cfg);
+  if (!cfg && !files.length) return null; // 설치 안 된 프로젝트(루트에도 앱에도 DESIGN.md 없음)
+  const logCfg = cfg ?? configFor(root, files[0], cache);
+  // 이미 한 번 지적함 → 통과. 로그가 켜져 있으면 남은 것만 기록한다(지적 뒤 실제로 고쳤는지)
+  if (input?.stop_hook_active && !logOn(logCfg)) return null;
+  const all = lintFiles(files, cfg, root, { soft: true, cache });
   const hard = all.filter((f) => f.tier === 'hard' && f.severity === 'block');
   // 소프트는 이번에 추가·수정한 줄만. 한 줄 고쳤다고 레거시 파일 부채 전체를 들이밀지 않는다(부채는 --all)
   const added = addedLines(git(root, 'diff -U0 --no-color --no-ext-diff HEAD'));
   const fresh = (f) => { const s = added.get(f.file); return !s || s.has(f.line); };
   const softF = all.filter((f) => f.tier === 'soft' && fresh(f));
+  if (input?.stop_hook_active) { logEvent(root, logCfg, { ev: 'stop-after', rules: countIds([...hard, ...softF]) }); return null; }
   const warns = all.filter((f) => f.severity === 'warn'); // 레거시 hardcoded_color: warn
   if (!hard.length && !softF.length) {
     const w = warns.length ? `\n경고 ${warns.length}건 (차단 아님):\n${format(warns)}` : '';
@@ -422,6 +525,7 @@ export function runStop(input, cfg, root) {
   if (hard.length) parts.push(`하드 룰 ${hard.length}건, 토큰으로 고쳐야 합니다:\n${format(hard, { max: 10 })}`);
   if (softF.length) parts.push(`소프트 룰 ${softF.length}건, 검토하세요. 정당하면 파일에 /* ui-lint-allow <id>: <이유> */ 를 남기세요:\n${formatGrouped(softF)}`);
   parts.push(FOOTER, '(한 번만 지적합니다. 고친 뒤 다시 종료하세요.)');
+  logEvent(root, logCfg, { ev: 'stop-block', rules: countIds([...hard, ...softF]) });
   return { json: { decision: 'block', reason: parts.join('\n') } };
 }
 
@@ -451,18 +555,22 @@ export function runAll(cfg, root) {
   const files = walk(root, root);
   const all = [];
   const byFile = new Map();
-  let tokenUses = 0;
-  const varRx = new RegExp(`var\\(\\s*--${cfg.token_prefix}-`, 'g');
+  const cache = new Map();
+  let tokenUses = 0, scoped = 0;
   for (const f of files) {
+    const fc = configFor(root, f, cache) ?? cfg; // 모노레포: 파일마다 가장 가까운 DESIGN.md
+    if (!fc) continue;
+    scoped++;
     const abs = path.join(root, f);
     let st; try { st = fs.statSync(abs); } catch { continue; }
     if (!st.isFile() || st.size > MAX_BYTES) continue;
     const c = fs.readFileSync(abs, 'utf8');
-    if (!isUiFile(f, c, cfg.tokens_path)) continue;
+    if (!isUiFile(f, c, tokensRel(fc))) continue;
     const rel = f.replace(/\\/g, '/');
-    tokenUses += (c.match(varRx) || []).length + (c.match(SEMANTIC_UTIL) || []).length;
-    for (const x of lint(c, rel, cfg, { soft: true })) { all.push({ file: rel, ...x }); byFile.set(rel, (byFile.get(rel) ?? 0) + 1); }
+    tokenUses += (c.match(new RegExp(`var\\(\\s*--${fc.token_prefix}-`, 'g')) || []).length + (c.match(SEMANTIC_UTIL) || []).length;
+    for (const x of lint(c, rel, fc, { soft: true })) { all.push({ file: rel, ...x }); byFile.set(rel, (byFile.get(rel) ?? 0) + 1); }
   }
+  if (!cfg && !scoped) return { report: '[ui-lint] DESIGN.md 없음 — 설치되지 않은 프로젝트\n', exit: 0 };
   const hardBlocks = all.filter((f) => f.tier === 'hard' && f.severity === 'block');
   const colorFontViol = all.filter((f) => f.tier === 'hard').length; // R1~R4
   const denom = tokenUses + colorFontViol;
@@ -483,12 +591,13 @@ async function main() {
   const mode = process.argv[2] ?? '--pre';
   try {
     const root = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-    const cfg = loadConfig(root);
-    if (mode === '--all') {
-      if (!cfg) { process.stdout.write('[ui-lint] DESIGN.md 없음 — 설치되지 않은 프로젝트\n'); process.exit(0); }
-      const r = runAll(cfg, root); process.stdout.write(r.report); process.exit(r.exit);
+    const cfg = loadConfig(root); // 루트 계약. 모노레포는 없을 수 있다(앱 폴더마다 DESIGN.md) → 파일별로 찾는다
+    if (mode === '--all') { const r = runAll(cfg, root); process.stdout.write(r.report); process.exit(r.exit); }
+    if (mode === '--stats') {
+      const p = path.join(root, '.claude', 'ui-lint', 'log.jsonl');
+      process.stdout.write(formatStats(statsFromLog(safeRead(`${p}.1`) + '\n' + safeRead(p))) + '\n');
+      process.exit(0);
     }
-    if (!cfg) process.exit(0);
     let input = {}; try { input = JSON.parse((await readStdin()) || '{}'); } catch { /* 빈 입력 */ }
     if (mode === '--pre') {
       const r = runPre(input, cfg, root);

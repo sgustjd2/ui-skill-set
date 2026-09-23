@@ -123,8 +123,30 @@ t('integration: v4 install drops theme.css next to tokens', () => {
   const r = spawnSync(process.execPath, [path.join(here, 'install.mjs'), '--target', root, '--stack', 'react-tailwind4', '--hue', 'blue'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
   assert.ok(fs.existsSync(path.join(root, 'src/styles/theme.css')), 'v4엔 theme.css 있어야');
+  assert.ok(fs.existsSync(path.join(root, '.claude/hooks/design-md-sync.mjs')), 'design-md-sync 훅');
+  assert.match(fs.readFileSync(path.join(root, 'DESIGN.md'), 'utf8'), new RegExp(`^name: ${path.basename(root)}$`, 'm'), 'name = 폴더 이름');
   assert.match(fs.readFileSync(path.join(root, 'src/styles/theme.css'), 'utf8'), /@theme inline/);
   assert.ok(!fs.existsSync(path.join(root, 'tailwind.ui-preset.cjs')), 'v4엔 preset 없어야');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+// ── 모노레포 앱(--app): 계약 파일만, 훅·settings·CLAUDE.md 없음. 루트 훅이 앱 DESIGN.md를 적용
+t('integration: --app installs contract files only, root hook applies app DESIGN.md', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ui-install-app-'));
+  const run = (...args) => spawnSync(process.execPath, [path.join(here, 'install.mjs'), ...args], { encoding: 'utf8' });
+  assert.equal(run('--target', root, '--stack', 'react-tailwind4').status, 0);           // 저장소 루트: 일반 설치
+  const app = path.join(root, 'apps', 'admin');
+  const r = run('--target', app, '--stack', 'react-tailwind4', '--app');
+  assert.equal(r.status, 0, r.stderr);
+  for (const f of ['DESIGN.md', 'src/styles/tokens.css', 'src/styles/theme.css']) assert.ok(fs.existsSync(path.join(app, f)), f);
+  for (const f of ['.claude', 'CLAUDE.md']) assert.ok(!fs.existsSync(path.join(app, f)), `${f}는 앱에 없어야`);
+  // 앱 DESIGN.md만 그라데이션 허용 → 루트 훅이 앱 파일엔 허용, 루트 파일엔 차단
+  const md = path.join(app, 'DESIGN.md');
+  fs.writeFileSync(md, fs.readFileSync(md, 'utf8').replace('gradient_policy: none', 'gradient_policy: allow'));
+  const pre = (file_path) => spawnSync(process.execPath, [path.join(root, '.claude/hooks/design-lint.mjs'), '--pre'], {
+    input: JSON.stringify({ tool_input: { file_path, content: '<div className="bg-linear-to-r" />' } }), env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: 'utf8' });
+  assert.equal(pre('apps/admin/src/Hero.tsx').status, 0);
+  assert.equal(pre('src/Hero.tsx').status, 2);
   fs.rmSync(root, { recursive: true, force: true });
 });
 

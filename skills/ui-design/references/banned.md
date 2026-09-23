@@ -8,7 +8,7 @@
 
 | 금지 | 되살아나는 조건 | 훅 |
 |---|---|---|
-| 그라데이션 (linear/radial/conic, `bg-gradient-to-*`, `bg-linear-to-*`) | DESIGN.md `gradient_policy: allow`, 또는 브랜드 히어로 등 명시 근거로 `/* ui-lint-allow gradient: <이유> */` | R1 차단 |
+| 그라데이션 (linear/radial/conic, `bg-gradient-to-*`, `bg-linear-*`) | DESIGN.md `gradient_policy: allow`, 또는 브랜드 히어로 등 명시 근거로 `/* ui-lint-allow gradient: <이유> */`. 토큰 둘은 항상 허용: 스켈레톤 `--ui-gradient-shimmer`, 스크롤 가장자리 페이드 `mask-image: var(--ui-gradient-fade-x/-y)` | R1 차단 |
 | AI-purple (`#7c3aed` 계열, `from-purple to-blue`, 보라 글로우) | 브랜드 색상이 실제로 보라 → DESIGN.md `brand_hue: purple` | R2 차단 |
 | 하드코딩 색 (hex/rgb/oklch, `bg-blue-500` 류) | tokens.css 안에서만. 컴포넌트에서는 절대 | R3 차단 |
 | 순수 흑백 Tailwind (`bg-black`, `text-white`) | 시맨틱 토큰(`bg-neutral-solid`, `text-fg-on-solid`)으로 대체. 예외 없음 | S11 |

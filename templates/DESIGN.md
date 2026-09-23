@@ -1,6 +1,6 @@
 ---
-ui_skill_set: 0.1
-project: my-app
+ui_skill_set: 0.4
+name: my-app
 mode_default: operate
 platform: web
 stack: react-tailwind4
@@ -14,29 +14,100 @@ tailwind_palette: deny
 hardcoded_color: block
 radius_scale: soft
 copy_register: haeyo
+# ── design.md 호환 토큰: design-md-sync가 tokens.css에서 생성(라이트 모드). 손으로 고치지 않는다. 컴포넌트는 hex가 아니라 토큰을 쓴다 ──
+version: alpha
+colors:
+  primary: "#135fcd"
+  on-primary: "#ffffff"
+  surface: "#ffffff"
+  on-surface: "#1a1c20"
+  on-surface-variant: "#555d6d"
+  neutral: "#f3f4f5"
+  outline: "#dcdee3"
+  error: "#ca1d13"
+  success: "#00745f"
+  info: "#135fcd"
+typography:
+  display:
+    fontFamily: "Pretendard Variable"
+    fontSize: 32px
+    fontWeight: 700
+    lineHeight: 42px
+  headline-lg:
+    fontFamily: "Pretendard Variable"
+    fontSize: 26px
+    fontWeight: 700
+    lineHeight: 35px
+  headline-md:
+    fontFamily: "Pretendard Variable"
+    fontSize: 22px
+    fontWeight: 700
+    lineHeight: 30px
+  title:
+    fontFamily: "Pretendard Variable"
+    fontSize: 20px
+    fontWeight: 700
+    lineHeight: 27px
+  body-lg:
+    fontFamily: "Pretendard Variable"
+    fontSize: 18px
+    fontWeight: 400
+    lineHeight: 24px
+  body-md:
+    fontFamily: "Pretendard Variable"
+    fontSize: 16px
+    fontWeight: 400
+    lineHeight: 24px
+  body-sm:
+    fontFamily: "Pretendard Variable"
+    fontSize: 14px
+    fontWeight: 400
+    lineHeight: 21px
+  label-md:
+    fontFamily: "Pretendard Variable"
+    fontSize: 14px
+    fontWeight: 500
+    lineHeight: 21px
+  caption:
+    fontFamily: "Pretendard Variable"
+    fontSize: 13px
+    fontWeight: 400
+    lineHeight: 20px
+rounded:
+  control: 8px
+  card: 16px
+  sheet: 20px
+  full: 9999px
+spacing:
+  xs: 4px
+  sm: 8px
+  md: 16px
+  lg: 24px
+  xl: 32px
 ---
 
 # DESIGN.md
 
 이 파일은 이 프로젝트 UI의 계약이다. 사람이 읽고, `design-lint`가 frontmatter를 읽는다.
-UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
+UI 작업 전 반드시 읽는다. 바꾸려면 맨 아래 Do's and Don'ts의 예외 표에 이유를 남긴다.
+섹션 제목과 frontmatter 아래쪽 토큰은 [design.md 포맷](https://github.com/google-labs-code/design.md) 호환이라 Stitch 같은 다른 도구도 읽는다. 토큰의 원본은 tokens.css이고, 바꾼 뒤 `node .claude/hooks/design-md-sync.mjs`로 다시 생성한다.
 
-## 1. 제품과 모드
+## Overview
 
 - 제품: (한 문장. 무엇을, 누구에게)
 - 기본 모드: **Operate** (과업 완료가 성공). 랜딩·마케팅 화면만 Persuade.
 - 다이얼: variance 4 · motion 3 · density 5 (제품 UI 기준. 화려함보다 예측 가능함)
 
-## 2. 색
+## Colors
 
 - 액센트 **1색**: `--ui-accent-*` (TODO: 브랜드 램프로 교체. 채도 80% 미만)
 - 뉴트럴: `--ui-gray-00…1000`. 순수 `#000`/`#fff`는 토큰 안에서만.
 - 상태색: critical(red) · positive(green) · informative(blue). 의미 없는 곳에 쓰지 않는다.
 - 다크모드: `[data-theme="dark"]`에서 scale만 반전. 컴포넌트에 `dark:` 분기 금지.
-- **그라데이션: 없음** (`gradient_policy: none`). 유일한 예외는 스켈레톤 `--ui-gradient-shimmer`.
+- **그라데이션: 없음** (`gradient_policy: none`). 예외는 토큰 둘뿐: 스켈레톤 `--ui-gradient-shimmer`, 스크롤 가장자리 페이드 마스크 `--ui-gradient-fade-x`/`-y`(`mask-image` 전용).
 - 컴포넌트는 semantic 토큰만: `text-fg-neutral`, `bg-brand-solid`, `border-stroke-neutral` …
 
-## 3. 타이포
+## Typography
 
 - 폰트: Pretendard Variable 셀프호스트 → `var(--ui-font-sans)` / `font-sans`. Google Fonts `<link>` 금지.
 - 스케일: t1~t14 (`--ui-text-*` + `--ui-leading-*`). 본문 t5(16px), 보조 t4, 캡션 t3. 제목 t7~t10. t11+는 sm 이상.
@@ -45,7 +116,7 @@ UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
 - 숫자·가격: `tabular-nums`, 통화 표기 한 가지로 통일.
 - 카피: **해요체**(`copy_register: haeyo`). 과한 경어(~하시겠어요·께·계시다) 없이, 능동형·긍정형. 에러는 문제 + 다음 행동. 합니다체 제품이면 `hamnida`로 바꾼다.
 
-## 4. 레이아웃·간격
+## Layout
 
 - 4px 그리드. Tailwind `p-4` = 16px 그대로.
 - 브레이크포인트: base 0 · sm 480 · md 768 · lg 1280 · xl 1440. 모바일 우선.
@@ -53,13 +124,16 @@ UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
 - 그리드 우선. flex 퍼센트 계산 금지. `h-screen` 대신 `min-h-dvh`.
 - Safe area: `viewport-fit=cover`. 누를 것·읽을 것은 안전 영역 안, 배경은 끝까지. 하단 고정 바 `pb-[calc(env(safe-area-inset-bottom)+16px)]`.
 
-## 5. 형태·깊이
+## Elevation & Depth
 
-- 라디우스 스케일: **soft** 고정. 컨트롤 8px(`rounded-control`) · 카드 16px(`rounded-card`) · 시트 20px(`rounded-sheet`). 섞지 않는다.
 - 깊이는 표면색 → 스트로크 → 그림자 순으로. 그림자는 `--ui-shadow-1…3`뿐이고 **화면당 그림자 요소 ≤ 3개**.
 - 중첩 카드 금지. 카드 대신 간격·구분선으로 묶는다.
 
-## 6. 모션
+## Shapes
+
+- 라디우스 스케일: **soft** 고정. 컨트롤 8px(`rounded-control`) · 카드 16px(`rounded-card`) · 시트 20px(`rounded-sheet`). 섞지 않는다.
+
+## Motion
 
 - 지속시간 `--ui-duration-1…6` (50~300ms). 마이크로 ≤ 200ms. 퇴장은 진입보다 짧다.
 - 이징: 기능적 마이크로 `ease-standard`, 시트·다이얼로그 `ease-enter`/`ease-exit`. bounce/elastic 금지.
@@ -67,7 +141,7 @@ UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
 - `prefers-reduced-motion`이면 duration 0 (토큰이 처리).
 - 화면당 움직이는 요소 1~2개. "왜 움직이는가"에 한 문장으로 답 못 하면 뺀다.
 
-## 7. 컴포넌트 규약
+## Components
 
 - primary CTA 화면당 **1개**. 버튼 variant: brand-solid · neutral-weak · critical-solid · text. 나란히 최대 3개.
 - **파괴적 버튼은 강조도로 정한다**: 위험 구역의 트리거(대개 이차 액션, 실제 확정은 모달에서)는 **아웃라인** — `border-stroke-critical` + `text-fg-critical`, hover `bg-critical-weak`. 모달의 **최종 확정**만 솔리드 — `bg-critical-solid` + `text-fg-on-solid`. 한 화면에 파괴적 솔리드는 최대 1개. (트리거까지 솔리드로 하면 화면이 위협적으로 읽힌다.)
@@ -77,9 +151,9 @@ UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
 - 폼: 라벨은 인풋 위, 에러는 아래, placeholder를 라벨로 쓰지 않는다. 에러 스타일은 `user-invalid:`.
 - 다이얼로그 보조 버튼: 닫기만 하면 **"닫기"**. "취소"는 진행 중인 작업을 실제로 되돌릴 때만.
 
-## 8. 금지와 허용 예외
+## Do's and Don'ts
 
-프로젝트 추가 금지 (전역 금지는 `ui-design` 스킬 `references/craft-floor.md`):
+프로젝트 추가 금지 (전역 금지는 `ui-design` 스킬 `references/banned.md`):
 - (없음)
 
 허용 예외 — 마커 `/* ui-lint-allow <rule>: <이유> */`와 함께 여기에 기록. 스킬은 추가 전에 사용자에게 1줄로 묻는다.

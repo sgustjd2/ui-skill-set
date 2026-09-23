@@ -4,12 +4,14 @@ description: >
   ui-skill-set을 현재 프로젝트에 설치한다. DESIGN.md·tokens.css·design-lint 훅·ui-design 스킬·CLAUDE 규약을
   넣는다. 신규 프로젝트 세팅, "UI 스킬셋 설치", "디자인 토큰 세팅", 레거시 프로젝트 온보딩(--legacy),
   기존 설치 업데이트(--update)에 사용한다.
-version: 0.3.0
+version: 0.4.0
 user-invocable: true
 argument-hint: "[--legacy | --update]"
 allowed-tools:
   - Bash(node */templates/install.mjs *)
   - Bash(node .claude/hooks/design-lint.mjs *)
+  - Bash(node .claude/hooks/tokens-contrast.mjs *)
+  - Bash(node .claude/hooks/design-md-sync.mjs *)
 ---
 
 # ui-init — ui-skill-set 설치
@@ -41,13 +43,14 @@ node "${CLAUDE_PLUGIN_ROOT:-<ui-skill-set 루트>}/templates/install.mjs" --targ
 ```
 
 레거시: `--legacy` 추가. 업데이트: `--update`만(질문 생략).
+모노레포(`apps/*`처럼 앱마다 디자인이 다를 때): 저장소 루트에서 위 명령을 한 번 실행하고, 앱마다 `--target apps/<앱> --app`을 실행한다. `--app`은 DESIGN.md·tokens.css·브릿지만 넣고, 린터는 편집하는 파일에서 가장 가까운 DESIGN.md를 적용한다.
 
 설치기가 하는 일: `.claude/hooks/design-lint.mjs`, `.claude/skills/ui-design/`, `DESIGN.md`(frontmatter 채움), `src/styles/tokens.css`, `.claude/settings.json`(기존 훅 보존하며 병합), `CLAUDE.md`(규약 멱등 추가).
 
 ## 4. 마무리 (사용자에게 안내)
 
 설치기 출력의 "다음 단계"를 그대로 전달하되, 다음을 직접 도와줄 수 있다고 알린다:
-1. `DESIGN.md` §1~§2 채우기(제품 한 줄, 액센트 색). 브랜드 hex를 받았으면 `tokens.css`의 `--ui-accent-100…900`을 그 램프로 교체.
+1. `DESIGN.md` Overview·Colors 채우기(제품 한 줄, 액센트 색). 브랜드 hex를 받았으면 `tokens.css`의 `--ui-accent-100…900`을 그 램프로 교체하고 `node .claude/hooks/tokens-contrast.mjs`(대비) → `node .claude/hooks/design-md-sync.mjs`(DESIGN.md의 design.md 호환 토큰 갱신).
 2. CSS 엔트리에서 `tokens.css` import. Tailwind v4면 `@import "tailwindcss";` 다음 줄.
 3. Pretendard Variable 셀프호스트 + `<html>`에 다크모드 스크립트 한 줄(tokens.css 주석).
 4. 검증: `node .claude/hooks/design-lint.mjs --all` → 토큰 커버리지와 위반 0 확인.

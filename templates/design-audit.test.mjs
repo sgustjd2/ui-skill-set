@@ -1,6 +1,6 @@
 // design-audit.test.mjs — 대비 수학 + 판정 로직(브라우저 불필요). node templates/design-audit.test.mjs
 import assert from 'node:assert/strict';
-import { parseColor, relLuminance, contrastRatio, composite, contrastThreshold, evaluate, evaluateForced } from './design-audit.mjs';
+import { parseColor, relLuminance, contrastRatio, composite, contrastThreshold, evaluate, evaluateForced, apcaLc } from './design-audit.mjs';
 
 let n = 0, failed = 0;
 const t = (name, fn) => { try { fn(); n++; } catch (e) { failed++; console.error(`✗ ${name}\n   ${e.message}`); } };
@@ -16,6 +16,14 @@ t('white on white = 1:1', () => assert.equal(contrastRatio({ r: 255, g: 255, b: 
 t('#767676 on white ≈ 4.54 (AA 경계)', () => assert.ok(contrastRatio({ r: 118, g: 118, b: 118 }, { r: 255, g: 255, b: 255 }) >= 4.5));
 t('#999 on white < 4.5 (실패)', () => assert.ok(contrastRatio({ r: 153, g: 153, b: 153 }, { r: 255, g: 255, b: 255 }) < 4.5));
 t('relLuminance white=1 black=0', () => { assert.ok(near(relLuminance({ r: 255, g: 255, b: 255 }), 1)); assert.ok(near(relLuminance({ r: 0, g: 0, b: 0 }), 0)); });
+
+// ── APCA Lc (apca-w3 README 참조값. 참고용, 판정 아님)
+const hex = (x) => ({ r: parseInt(x.slice(0, 2), 16), g: parseInt(x.slice(2, 4), 16), b: parseInt(x.slice(4, 6), 16) });
+t('APCA reference values', () => {
+  for (const [txt, bg, exp] of [['888888', 'ffffff', 63.0565], ['ffffff', '888888', -68.5415], ['000000', 'aaaaaa', 58.1463], ['aaaaaa', '000000', -56.2411], ['000000', 'ffffff', 106.0407], ['ffffff', '000000', -107.8847]])
+    assert.ok(near(apcaLc(hex(txt), hex(bg)), exp, 0.01), `${txt} on ${bg}: ${apcaLc(hex(txt), hex(bg))} ≠ ${exp}`);
+});
+t('APCA same color → 0', () => assert.equal(apcaLc(hex('777777'), hex('777777')), 0));
 
 // ── 알파 합성
 t('composite opaque returns fg', () => assert.deepEqual(composite({ r: 10, g: 20, b: 30, a: 1 }, { r: 255, g: 255, b: 255 }), { r: 10, g: 20, b: 30, a: 1 }));
@@ -39,6 +47,10 @@ t('low contrast → blocker', () => {
   const d = { ...okData, texts: [{ color: 'rgb(180,180,180)', bg: 'rgb(255,255,255)', fontSize: 14, weight: 400, sample: '흐린텍스트' }] };
   const f = evaluate(d, 1280);
   assert.ok(f.some((x) => x.id === 'low-contrast' && x.severity === 'blocker'));
+});
+t('low-contrast message carries APCA Lc (참고)', () => {
+  const f = evaluate({ ...okData, texts: [{ color: 'rgb(180,180,180)', bg: 'rgb(255,255,255)', fontSize: 14, weight: 400, sample: '흐림' }] }, 1280).find((x) => x.id === 'low-contrast');
+  assert.match(f.msg, /APCA Lc \d+, 참고/);
 });
 t('overflow → blocker', () => assert.ok(evaluate({ ...okData, overflow: true, scrollWidth: 500 }, 375).some((x) => x.id === 'horizontal-overflow')));
 t('missing lang → blocker', () => assert.ok(evaluate({ ...okData, lang: '' }, 375).some((x) => x.id === 'missing-lang')));

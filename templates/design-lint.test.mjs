@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { lint, isUiFile, parseFrontmatter, DEFAULTS, addedLines, formatGrouped } from './design-lint.mjs';
+import { lint, isUiFile, parseFrontmatter, DEFAULTS, addedLines, formatGrouped, configFor, statsFromLog, formatStats } from './design-lint.mjs';
 
 let n = 0, failed = 0;
 const t = (name, fn) => { try { fn(); n++; } catch (e) { failed++; console.error(`✗ ${name}\n   ${e.message}`); } };
@@ -253,6 +253,104 @@ t('integration --stop: soft only on changed lines', () => {
   assert.equal(out.decision, 'block');
   assert.match(out.reason, /z-arbitrary/);
   assert.ok(!/h-screen/.test(out.reason), out.reason);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+// ── 모노레포: 파일에서 가장 가까운 DESIGN.md
+const SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'design-lint.mjs');
+const mkRoot = (tag) => fs.mkdtempSync(path.join(os.tmpdir(), `ui-lint-${tag}-`));
+const put = (root, rel, s) => { fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true }); fs.writeFileSync(path.join(root, rel), s); };
+const pre = (root, file_path, content, env = {}) => spawnSync(process.execPath, [SCRIPT, '--pre'], { input: JSON.stringify({ tool_name: 'Write', tool_input: { file_path, content } }), env: { ...process.env, CLAUDE_PROJECT_DIR: root, ...env }, encoding: 'utf8' });
+
+t('configFor walks up to nearest DESIGN.md, stops at root', () => {
+  const root = mkRoot('mono');
+  put(root, 'apps/web/DESIGN.md', '---\nui_skill_set: 0.1\ngradient_policy: allow\ntokens_path: src/tokens.css\n---\n');
+  put(root, 'DESIGN.md', '---\ngradient_policy: none\n---\n');
+  const web = configFor(root, 'apps/web/src/a/B.tsx');
+  assert.equal(web.gradient_policy, 'allow');
+  assert.equal(web._dir, 'apps/web');
+  assert.equal(configFor(root, 'packages/ui/C.tsx').gradient_policy, 'none', '앱 밖은 루트 계약');
+  put(root, 'packages/api/DESIGN.md', '# API 설계 문서\n');  // 우리 계약이 아닌 DESIGN.md
+  assert.equal(configFor(root, 'packages/api/src/D.tsx').gradient_policy, 'none', 'ui_skill_set 없는 하위 DESIGN.md는 무시 → 루트');
+  fs.rmSync(path.join(root, 'DESIGN.md'));
+  assert.equal(configFor(root, 'packages/ui/C.tsx'), null, '루트에도 없으면 null');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+t('integration monorepo: per-app policy in --pre and --all, no DESIGN.md → no-op', () => {
+  const root = mkRoot('mono2');
+  put(root, 'apps/marketing/DESIGN.md', '---\nui_skill_set: 0.1\ngradient_policy: allow\n---\n');
+  put(root, 'apps/admin/DESIGN.md', '---\nui_skill_set: 0.1\ngradient_policy: none\n---\n');
+  const grad = '<div className="bg-linear-to-r from-x" />';
+  assert.equal(pre(root, 'apps/marketing/src/Hero.tsx', grad).status, 0, 'marketing은 그라데이션 허용');
+  assert.equal(pre(root, 'apps/admin/src/Hero.tsx', grad).status, 2, 'admin은 차단');
+  assert.equal(pre(root, 'packages/x/Y.tsx', grad).status, 0, 'DESIGN.md 없는 곳은 검사 안 함');
+  put(root, 'apps/admin/src/Bad.tsx', grad);
+  put(root, 'apps/marketing/src/Ok.tsx', grad);
+  const all = spawnSync(process.execPath, [SCRIPT, '--all'], { env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: 'utf8' });
+  assert.equal(all.status, 1);
+  assert.match(all.stdout, /apps\/admin\/src\/Bad\.tsx/);
+  assert.ok(!/marketing/.test(all.stdout), all.stdout);
+  // 앱 tokens_path는 앱 폴더 기준 → 그 파일은 검사에서 빠진다
+  put(root, 'apps/admin/DESIGN.md', '---\nui_skill_set: 0.1\ngradient_policy: none\ntokens_path: app/theme-tokens.css\n---\n');
+  put(root, 'apps/admin/app/theme-tokens.css', ':root { --x: #123456; }');
+  fs.rmSync(path.join(root, 'apps/admin/src/Bad.tsx'));
+  assert.equal(spawnSync(process.execPath, [SCRIPT, '--all'], { env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: 'utf8' }).status, 0);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+t('integration: repo with no DESIGN.md anywhere → --all says not installed', () => {
+  const root = mkRoot('none');
+  put(root, 'src/A.tsx', '<div className="bg-linear-to-r" />');
+  const r = spawnSync(process.execPath, [SCRIPT, '--all'], { env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: 'utf8' });
+  assert.equal(r.status, 0); assert.match(r.stdout, /DESIGN\.md 없음/);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+// ── 발동 로그 → 통계
+t('statsFromLog: pre block→fixed/allowed/gaveup, stop fired→fixed', () => {
+  const L = (o) => JSON.stringify(o);
+  const S = statsFromLog([
+    L({ ev: 'block', rules: ['hardcoded-color'] }), L({ ev: 'block', rules: ['hardcoded-color'] }), L({ ev: 'resolved', fixed: ['hardcoded-color'], allowed: [] }),
+    L({ ev: 'block', rules: ['gradient'] }), L({ ev: 'resolved', fixed: [], allowed: ['gradient'] }),
+    L({ ev: 'block', rules: ['hardcoded-font'] }), L({ ev: 'gaveup', rules: ['hardcoded-font'] }),
+    L({ ev: 'stop-block', rules: { 'h-screen': 2, 'copy-register': 1 } }), L({ ev: 'stop-after', rules: { 'copy-register': 1 } }),
+    'garbage line',
+  ].join('\n'));
+  assert.deepEqual([S['hardcoded-color'].blocks, S['hardcoded-color'].fixed], [2, 1]);
+  assert.equal(S.gradient.allowed, 1);
+  assert.equal(S['hardcoded-font'].gaveup, 1);
+  assert.deepEqual([S['h-screen'].stopFired, S['h-screen'].stopFixed, S['copy-register'].stopFixed], [2, 2, 0]);
+  assert.match(formatStats(S), /hardcoded-color\s+2\s+1\s+0\s+0\s+100%/);
+});
+t('integration log: pre block then fix → log + --stats; UI_LINT_LOG=0 disables; folder self-gitignored', () => {
+  const root = mkRoot('log');
+  put(root, 'DESIGN.md', '---\ntoken_prefix: ui\n---\n');
+  assert.equal(pre(root, 'src/A.tsx', '<div style={{ color: "#123456" }} />').status, 2);
+  assert.equal(pre(root, 'src/A.tsx', '<div className="text-fg-neutral" />').status, 0);
+  const log = fs.readFileSync(path.join(root, '.claude/ui-lint/log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  assert.deepEqual(log.map((e) => e.ev), ['block', 'resolved']);
+  assert.deepEqual(log[1].fixed, ['hardcoded-color']);
+  assert.equal(fs.readFileSync(path.join(root, '.claude/ui-lint/.gitignore'), 'utf8').trim(), '*');
+  const st = spawnSync(process.execPath, [SCRIPT, '--stats'], { env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: 'utf8' });
+  assert.match(st.stdout, /hardcoded-color\s+1\s+1\s+0\s+0\s+100%/);
+  pre(root, 'src/B.tsx', '<div style={{ color: "#123456" }} />', { UI_LINT_LOG: '0' });
+  assert.equal(fs.readFileSync(path.join(root, '.claude/ui-lint/log.jsonl'), 'utf8').trim().split('\n').length, 2, '끄면 기록 안 함');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+t('integration log: stop-block → fix → stop_hook_active records stop-after', () => {
+  const root = mkRoot('stoplog');
+  const g = (a) => spawnSync('git', a, { cwd: root, encoding: 'utf8' });
+  if (g(['init', '-q']).status !== 0) { fs.rmSync(root, { recursive: true, force: true }); return; }
+  g(['config', 'user.email', 't@t']); g(['config', 'user.name', 't']);
+  put(root, 'DESIGN.md', '---\ntoken_prefix: ui\n---\n');
+  g(['add', '-A']); g(['commit', '-qm', 'init']);
+  const stop = (active) => spawnSync(process.execPath, [SCRIPT, '--stop'], { input: JSON.stringify({ stop_hook_active: active }), env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: 'utf8' });
+  put(root, 'src/A.tsx', '<section className="h-screen" />\n');
+  assert.equal(JSON.parse(stop(false).stdout).decision, 'block');
+  put(root, 'src/A.tsx', '<section className="min-h-dvh" />\n');
+  assert.equal(stop(true).stdout, '', '두 번째 종료는 통과');
+  const st = spawnSync(process.execPath, [SCRIPT, '--stats'], { env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: 'utf8' });
+  assert.match(st.stdout, /h-screen\s+1\s+1\s+100%/);
   fs.rmSync(root, { recursive: true, force: true });
 });
 
