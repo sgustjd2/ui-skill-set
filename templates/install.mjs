@@ -5,7 +5,7 @@
  * ui-skill-set을 대상 프로젝트에 설치한다. 순수 Node ≥18, 의존성 0.
  *   node install.mjs --target <dir> [--mode operate] [--hue blue] [--stack react-tailwind4]
  *                    [--tokens-path src/styles/tokens.css] [--legacy] [--update] [--force]
- * --legacy : 레거시 프로젝트. tailwind_palette=allow, hardcoded_color=warn 로 시작(점진 전환).
+ * --legacy : 레거시 프로젝트. tailwind_palette=allow, hardcoded_color=warn, copy_register=auto(기존 존댓말 유지, 혼용만 지적)로 시작(점진 전환).
  * --update : design-lint.mjs 와 skills/ui-design 만 갱신. DESIGN.md·tokens.css·settings.json·CLAUDE.md 는 보존.
  * --force  : 이미 있는 DESIGN.md/tokens.css 도 덮어쓴다.
  *
@@ -43,7 +43,7 @@ export function mergeSettings(existingJson) {
 /** DESIGN.md frontmatter의 키 값들을 opts로 교체. 없는 키는 그대로. */
 export function fillFrontmatter(md, opts = {}) {
   const set = { ...opts };
-  if (opts.legacy) { set.tailwind_palette = 'allow'; set.hardcoded_color = 'warn'; }
+  if (opts.legacy) { set.tailwind_palette = 'allow'; set.hardcoded_color = 'warn'; set.copy_register = 'auto'; }
   delete set.legacy;
   const m = md.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)/);
   if (!m) return md;
@@ -127,7 +127,7 @@ function main() {
       brand_hue: a.hue, legacy: a.legacy,
     });
     fs.writeFileSync(dst('DESIGN.md'), md);
-    log('✓ DESIGN.md' + (a.legacy ? ' (legacy: tailwind_palette=allow, hardcoded_color=warn)' : ''));
+    log('✓ DESIGN.md' + (a.legacy ? ' (legacy: tailwind_palette=allow, hardcoded_color=warn, copy_register=auto)' : ''));
   }
 
   // tokens.css (프레임워크 무관, 항상 그대로 복사)

@@ -38,7 +38,7 @@ t('merge is idempotent', () => {
 t('merge tolerates broken json', () => { assert.ok(JSON.parse(mergeSettings('{not json')).hooks.PreToolUse); });
 
 // ── fillFrontmatter
-const FM = '---\nmode_default: operate\nstack: react-tailwind4\ntokens_path: src/styles/tokens.css\nbrand_hue: blue\ngradient_policy: none\ntailwind_palette: deny\nhardcoded_color: block\n---\n# body\n';
+const FM = '---\nmode_default: operate\nstack: react-tailwind4\ntokens_path: src/styles/tokens.css\nbrand_hue: blue\ngradient_policy: none\ntailwind_palette: deny\nhardcoded_color: block\ncopy_register: haeyo\n---\n# body\n';
 t('fill replaces values', () => {
   const out = fillFrontmatter(FM, { mode_default: 'persuade', stack: 'vue', brand_hue: 'purple' });
   assert.match(out, /mode_default: persuade/);
@@ -50,6 +50,7 @@ t('fill legacy sets policies', () => {
   const out = fillFrontmatter(FM, { legacy: true });
   assert.match(out, /tailwind_palette: allow/);
   assert.match(out, /hardcoded_color: warn/);
+  assert.match(out, /copy_register: auto/); // 기존 존댓말 체계를 강제로 바꾸지 않음
 });
 t('fill ignores null/undefined', () => {
   const out = fillFrontmatter(FM, { mode_default: undefined, stack: null });

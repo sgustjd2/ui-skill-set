@@ -10,10 +10,11 @@
 - **간격**: 묶음은 촘촘히, 묶음 사이는 넉넉히. 제목 위 여백 > 제목 아래 여백. 4px 그리드. 계산된 값을 실제로 읽어 확인한다.
 - **타이포**: 라틴 측정폭 65~75ch, 한글 30~45자. 디스플레이 최대 3rem(48px). 스케일 단계와 굵기 단계가 눈에 보이게 구분된다. 실제 카피를 모든 브레이크포인트에 흘려 넘치는 곳을 고친다.
 - **한국어**: `word-break: keep-all`. 본문 행간 ≥ 1.5. 자간 -0.02em 이내. 한/영 혼용은 한 폰트. 숫자는 `tabular-nums`.
-- **모션**: 화면당 연출된 순간 하나. 섹션마다 같은 등장 효과 반복 금지. 이미 보이는 상태에서 시작하는 ease-out. 퇴장은 진입보다 짧다. `transform`/`opacity`만.
+- **모션**: 화면당 연출된 순간 하나. 섹션마다 같은 등장 효과 반복 금지. 이미 보이는 상태에서 시작하는 ease-out. 퇴장은 진입보다 짧다. `transform`/`opacity`만. 다이얼로그·팝오버 진입은 JS 대신 `starting:` + `transition-discrete`(`@starting-style`, Baseline 2024).
+- **플랫폼 기본값**(2026-09 Baseline 기준): `text-wrap: balance/pretty`·`dvh`·`color-mix()`·`user-invalid:`는 써도 된다. anchor positioning·`<dialog closedby>`·invoker commands(`command`/`commandfor`)·customizable select(`base-select`)·scroll-driven animation·cross-document view transition은 아직 브라우저 한쪽이 비어 **기본값으로 쓰지 않는다**(기존 라이브러리 유지).
 - **상태**: hover · disabled · loading · error · empty. 더해서 실제 콘텐츠, 동작하는 컨트롤, 반응형 구성, 키보드 포커스.
 - **브라우저 표면**: 텍스트 선택색, 캐럿, 포커스 링, 밑줄 오프셋, 표의 숫자 정렬. 아무도 그리지 않은 부분이 브라우저 기본값으로 남아 있으면 "조립된" 티가 난다. tokens.css의 전역 규칙이 처리하지만, 덮어썼는지 확인한다.
-- **카피**: 제품의 언어. 컨트롤은 동작을 이름으로 갖고, 에러는 문제와 복구 방법을 함께 말한다. 존댓말 일관.
+- **카피**: 제품의 언어. 컨트롤은 동작을 이름으로 갖고, 에러는 문제와 복구 방법을 함께 말한다. 존댓말은 DESIGN.md `copy_register` 하나(기본 해요체, `korean-typography.md` ✗/✓ 표).
 - **커버리지**: 브리프의 모든 요구가 있고, 몇 초 안에 찾을 수 있다.
 
 ## 거부한다 (카테고리의 기본값. 브리프가 명시하면 허용, 습관으로 고르면 실패)
@@ -37,6 +38,7 @@
 - 사진 피사체 윤곽을 흉내 내는 원·다각형·radial-gradient 마스크.
 - 카테고리로 정한 라이트/다크. 누가, 어디서, 어떤 조명에서 쓰는지로 정한다.
 - **AI-purple.** `#7c3aed` 계열, `from-purple to-blue`. 브랜드가 보라가 아닌 한.
+- **2026년형 AI 기본값**(Anthropic `frontend-design` 스킬이 직접 꼽은 목록): 크림 배경(`#F4F1EA` 근처) + 테라코타 액센트(`#D97757` 근처), 거의 검정 + 형광 초록 액센트, `#0B0B0B`/`#111`을 "검정"으로, 작은 라벨마다 모노스페이스, CTA 끝 `→`, `A · B · C` 메타 문자열, AI 기능 표시에 반짝이(Sparkles) 아이콘. 보라를 피한 다음 모델이 가는 곳이다.
 - **Inter / Roboto / Arial를 기본으로.** DESIGN.md의 폰트 스택만.
 
 이 바닥은 기계를 붙든다. 방향을 고르지는 않는다. 모든 확인이 초록이면, 정해진 세계에 페이지를 쓴다. 세련됨과 확신 사이에서 흔들리면 확신 쪽으로.

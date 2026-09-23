@@ -15,6 +15,8 @@
 | 액센트 2색 이상 | 없음. 페이지당 액센트 1색 고정 | preflight |
 | 채도 80% 이상 액센트 | 브랜드가 그 채도를 명시 | — |
 | 오프셋 0의 색 있는 후광(글로우) | 없음. 그림자는 오프셋+블러 | preflight |
+| 크림 배경 + 테라코타 액센트(`#F4F1EA`/`#D97757` 근처), 거의 검정 + 형광 초록 | 브랜드 가이드가 그 색을 명시할 때. "따뜻해 보여서"는 이유가 아니다 | tokens-contrast·/ui-init |
+| `#0B0B0B`/`#111`을 검정으로 | 없음. `bg-neutral-solid`·`fg-neutral` 토큰 | R3 |
 
 ## 타이포
 
@@ -38,7 +40,10 @@
 | 히어로 지표 템플릿(큰 숫자+작은 라벨+통계) | 없음 |
 | `h-screen`/`100vh` | 없음. `min-h-dvh` (S5) |
 | flex 퍼센트 계산(`w-[calc(33%-1rem)]`) | 없음. CSS Grid |
-| 임의 z-index(`z-[9999]`) | 없음. z 스케일 정의 (S6) |
+| 임의 z-index(`z-[9999]`, `z-9999`) | 없음. z 스케일 정의 (S6) |
+| 임의 간격·글자·라디우스 값(`p-[13px]`, `text-[13px]`, `rounded-[10px]`) | 없음. 4px 그리드·t1~t14·라디우스 토큰 (S16). 자간 `tracking-[-0.02em]`과 `env(safe-area-*)` 계산은 허용 |
+| 진입하자마자 전체 화면 모달·바텀시트(권한 요청 포함), 뒤로가기 가로채기, 나가기 막기 | 없음. 필요한 순간에 맥락과 함께 묻는다 (토스 앱인토스 가이드) |
+| `<div onClick>`, `<tr onClick>` | 없음. `<button>`, 행은 첫 셀 링크 + `after:inset-0` (S21) |
 
 ## 표면·재질
 
@@ -55,7 +60,8 @@
 | 금지 | 되살아나는 조건 | 훅 |
 |---|---|---|
 | bounce/elastic 이징, cubic-bezier 오버슈트 | 없음. `--ui-ease-*` | S4 |
-| `transition: all`, `transition-all` | 없음. transform/opacity만 | S7 |
+| `transition: all`, `transition-all`, `transition-[all]` | 없음. transform/opacity만 | S7 |
+| width/height/padding/margin 전이 | 없음. `scale`/`translate`, 높이 애니메이션이 꼭 필요하면 `grid-rows-[0fr]→[1fr]` | S18 |
 | 이미지 hover 확대 | overflow·transform-origin을 다뤄 레이아웃이 안 밀릴 때 | S10 |
 | 섹션마다 같은 등장 효과 반복 | 없음. 화면당 연출된 순간 하나 | craft-floor |
 | 동기 없는 애니메이션 | "무엇을 알려주는가"에 한 문장으로 답할 때만 | preflight |
@@ -68,13 +74,19 @@
 | 직접 그린 SVG 아이콘 | 라이브러리에 없는 글리프를, 단순 기하 도형으로, 품질 확신이 있을 때 | craft-floor |
 | div로 만든 가짜 스크린샷 | 없음. 실제 스크린샷·컴포넌트·이미지 | craft-floor |
 | 아이콘 라이브러리 혼용 | 없음. 한 프로젝트 1종 | preflight |
+| CTA 끝 `→` 글리프 | 없음. 이동을 알려야 하면 라이브러리 화살표 아이콘(`aria-hidden`) | S20 |
+| AI 기능 표시에 반짝이(Sparkles) 아이콘 | 없음. 기능이 하는 일을 말하는 라벨 | craft-floor |
 
 ## 카피
 
 | 금지 | 되살아나는 조건 | 훅 |
 |---|---|---|
 | 마케팅 상투어(혁신적인·차세대·seamless·unleash) | 없음. 구체적 동사·명사 | S15 |
-| em-dash(—), en-dash(–) 구분자 | 없음. 범위 `~`, 구분 `·`/줄바꿈 | S12 |
+| em-dash(—), en-dash(–) 구분자 | 없음. 범위 `~`, 구분은 줄바꿈 또는 `·` | S12 |
+| `A · B · C` 메타 문자열(가운뎃점으로 3개 이상 나열) | 날짜·작성자처럼 짧은 메타 2개까지. 그 이상은 줄·열로 나눈다 | craft-floor |
+| 존댓말 혼용, 과한 경어(~하시겠어요·되었어요) | 없음. DESIGN.md `copy_register` 하나 | S23 |
+| 다이얼로그 닫기 버튼을 "취소"로 | 진행 중인 작업을 실제로 되돌릴 때만 "취소" | korean-typography |
+| `aria-label`이 보이는 텍스트와 다름 | 없음. 보이는 텍스트를 포함 (WCAG 2.5.3) | S22 |
 | 로렘 입숨, "홍길동", 완벽한 숫자(99.9%) | 없음. 실제 카피 | preflight |
 | 성공 메시지의 느낌표, 에러의 "앗!" | 없음 | korean-typography |
 | placeholder를 라벨 대신 | 없음. 라벨은 인풋 위 | preflight |
@@ -84,5 +96,5 @@
 | 금지 | 되살아나는 조건 |
 |---|---|
 | 한 화면에서 라이트/다크 섹션 혼용 | 브리프가 "테마 전환" 연출을 명시하고 한 번의 강한 전환일 때 |
-| 컴포넌트에 `dark:` 분기 | 없음. 다크는 tokens.css의 scale 반전으로 |
+| 컴포넌트에 `dark:` 분기 | 없음. 다크는 tokens.css의 scale 반전으로 (S19) |
 | 카테고리로 라이트/다크 결정 | 없음. 누가·어디서·어떤 조명에서 쓰는지로 |

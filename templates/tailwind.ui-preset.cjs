@@ -15,7 +15,11 @@
 const c = (n) => `var(--ui-color-${n})`;
 
 module.exports = {
+  // dark: 가 data-theme 전환을 따르게 (theme.css의 @custom-variant dark 와 같은 역할)
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
+    // DESIGN.md §4 브레이크포인트. extend가 아니라 교체 (기본 640/1024/1536 제거)
+    screens: { sm: '480px', md: '768px', lg: '1280px', xl: '1440px' },
     extend: {
       colors: {
         'fg-neutral': c('fg-neutral'),

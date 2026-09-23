@@ -15,8 +15,22 @@ This project includes material derived from the following Apache-2.0 licensed wo
    Used: anti-pattern detection regular expressions (AI-purple hex list, Tailwind
    gradient/palette patterns, overused-font handling) in templates/design-lint.mjs,
    and the structure of skills/ui-design/references/craft-floor.md.
+   The layout-property transition pattern (soft rule S18, added 2026-09) is adapted
+   from Impeccable's layout-transition detector.
 
 Apache License 2.0: http://www.apache.org/licenses/LICENSE-2.0
 
 Rule phrasing conventions were informed by leonxlnx/taste-skill and
 nextlevelbuilder/ui-ux-pro-max-skill (both MIT); no code was copied from them.
+
+2026-09 update (docs/research/2026-09-trends.md). The following informed rules and
+guidance; ideas are paraphrased, no code or text was copied:
+- anthropics/skills `frontend-design` (Apache-2.0, commit 41bbe19): list of AI default
+  aesthetics (cream/terracotta, trailing arrows, meta strings, sparkles icon).
+- vercel-labs/web-interface-guidelines (MIT): zoom-disabled, div onClick checks.
+- shadcn-ui/lint (MIT): arbitrary-value check and exact-fix error messages.
+- daangn/seed-design (Apache-2.0, commits 29b709b, 4706130): font-stack order
+  finding and safe-area layout guidance.
+- Toss public articles and guides (toss.tech, developers-apps-in-toss.toss.im): UX
+  writing principles (haeyo register, active/positive voice, close vs cancel) and the
+  "at most 4 rules per injection" hook design. No Toss marks or assets are included.

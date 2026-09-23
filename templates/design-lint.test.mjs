@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { lint, isUiFile, parseFrontmatter, DEFAULTS } from './design-lint.mjs';
+import { lint, isUiFile, parseFrontmatter, DEFAULTS, addedLines, formatGrouped } from './design-lint.mjs';
 
 let n = 0, failed = 0;
 const t = (name, fn) => { try { fn(); n++; } catch (e) { failed++; console.error(`✗ ${name}\n   ${e.message}`); } };
@@ -152,6 +152,103 @@ t('S15 buzzword korean', () => assert.ok(has(soft('<h2>혁신적인 차세대 �
 t('S15 buzzword english', () => assert.ok(has(soft('<h2>Seamless experience</h2>'), 'buzzword')));
 t('soft respects marker', () => assert.ok(!has(soft('/* ui-lint-allow h-screen: 랜딩 히어로 전면 */\n<section className="h-screen" />'), 'h-screen')));
 t('soft findings are tier soft not block-tier-hard', () => { const r = soft('<div className="shadow-xl" />'); const f = r.find((x) => x.id === 'heavy-shadow'); assert.equal(f.tier, 'soft'); });
+
+// ── 2026-09: Tailwind v4.1~4.3 신문법 우회 (전부 실측 우회였던 케이스)
+t('R1 bg-linear-(--x) v4 shorthand', () => assert.ok(has(tsx('<div className="bg-linear-(--my-grad)" />'), 'gradient')));
+t('R1 bg-linear-45 angle', () => assert.ok(has(tsx('<div className="bg-linear-45 from-x" />'), 'gradient')));
+t('R3 v4.2 palettes mauve/olive/mist/taupe', () => ['bg-mauve-500', 'text-olive-700', 'border-mist-200', 'bg-taupe-100'].forEach((c) => assert.ok(has(tsx(`<div className="${c}" />`), 'hardcoded-color'), c)));
+t('R3 v4.3 scrollbar-thumb color', () => assert.ok(has(tsx('<div className="scrollbar-thumb-gray-400" />'), 'hardcoded-color')));
+t('R3 v4.1 text-shadow/inset-shadow color', () => { assert.ok(has(tsx('<h1 className="text-shadow-blue-500" />'), 'hardcoded-color')); assert.ok(has(tsx('<div className="inset-shadow-red-200" />'), 'hardcoded-color')); });
+t('R3 hwb()/color(display-p3)/light-dark raw', () => ['color: hwb(12 20% 30%);', 'color: color(display-p3 1 0 0);', 'color: light-dark(white, black);'].forEach((s) => assert.ok(has(css(s), 'hardcoded-color'), s)));
+t('R3 color-mix from token passes', () => assert.ok(!has(css('background: color-mix(in oklab, var(--ui-color-bg-brand-solid) 20%, transparent);'), 'hardcoded-color')));
+t('R3 relative color from token passes', () => assert.ok(!has(css('color: oklch(from var(--ui-accent-700) l c h / 0.6);'), 'hardcoded-color')));
+t('R3 light-dark with tokens passes', () => assert.ok(!has(css('color: light-dark(var(--ui-gray-900), var(--ui-gray-100));'), 'hardcoded-color')));
+t('R3 background-color: property name not a color()', () => assert.ok(!has(css('background-color: var(--ui-color-bg-layer-default);'), 'hardcoded-color')));
+t('R4 font-[Open_Sans] v4 syntax', () => assert.ok(has(tsx('<p className="font-[Open_Sans]" />'), 'hardcoded-font')));
+t('R4 font-(family-name:--x)', () => assert.ok(has(tsx('<p className="font-(family-name:--my-font)" />'), 'hardcoded-font')));
+t('R4 font-[500] weight passes', () => assert.ok(!has(tsx('<p className="font-[500]" />'), 'hardcoded-font')));
+t('R4 token family-name passes', () => assert.ok(!has(tsx('<p className="font-[family-name:var(--ui-font-sans)]" />'), 'hardcoded-font')));
+t('R4 next/font/google undeclared', () => assert.ok(has(tsx("import { Noto_Sans_KR } from 'next/font/google';\n<div className=\"x\" />"), 'hardcoded-font')));
+t('R4 @fontsource undeclared', () => assert.ok(has(tsx("import '@fontsource-variable/inter';\n<div className=\"x\" />"), 'hardcoded-font')));
+t('R4 @fontsource declared font passes', () => assert.ok(!has(tsx("import '@fontsource/noto-sans-kr';", { font_families: ['Noto Sans KR'] }), 'hardcoded-font')));
+t('S3 arbitrary shadow-[…]', () => assert.ok(has(soft('<div className="shadow-[0_0_40px_rgba(0,0,0,.2)]" />'), 'heavy-shadow')));
+t('S4 linear() overshoot', () => assert.ok(has(soft('a{transition-timing-function:linear(0, 1.2 60%, 1)}'), 'bounce-easing')));
+t('S4 linear() normal passes', () => assert.ok(!has(soft('a{transition-timing-function:linear(0, 0.5 40%, 1)}'), 'bounce-easing')));
+t('S4 linear-gradient is not linear()', () => assert.ok(!has(soft('/* ui-lint-allow gradient: t */\na{background:linear-gradient(0deg, var(--ui-a) 120%)}'), 'bounce-easing')));
+t('S6 bare z-9999', () => assert.ok(has(soft('<div className="z-9999" />'), 'z-arbitrary')));
+t('S6 z-50 passes', () => assert.ok(!has(soft('<div className="z-50" />'), 'z-arbitrary')));
+t('S7 transition-[all] / transition-property: all', () => { assert.ok(has(soft('<div className="transition-[all]" />'), 'transition-all')); assert.ok(has(soft('a{transition-property: all}'), 'transition-all')); });
+t('S9 logical border-s-4 / border-l-[4px]', () => { assert.ok(has(soft('<div className="border-s-4" />'), 'side-tab')); assert.ok(has(soft('<div className="border-l-[4px]" />'), 'side-tab')); });
+t('S9 border-l-[1px] passes', () => assert.ok(!has(soft('<div className="border-l-[1px]" />'), 'side-tab')));
+t('S14 tracking-[-0.04em] / -0.025em', () => { assert.ok(has(soft('<h1 className="tracking-[-0.04em]">제목</h1>'), 'korean-tracking')); assert.ok(has(soft('h1{letter-spacing:-0.025em}'), 'korean-tracking')); });
+t('S14 -0.02em allowed', () => { assert.ok(!has(soft('<h1 className="tracking-[-0.02em]">제목</h1>'), 'korean-tracking')); assert.ok(!has(soft('h1{letter-spacing:-0.02em}'), 'korean-tracking')); });
+
+// ── S16~S23 신규 소프트 룰
+t('S16 arbitrary spacing with scale suggestion', () => { const f = soft('<div className="p-[13px]" />').find((x) => x.id === 'arbitrary-value'); assert.ok(f); assert.match(f.snippet, /p-3 \(12px\)/); });
+t('S16 arbitrary text/rounded', () => { assert.ok(has(soft('<p className="text-[13px]" />'), 'arbitrary-value')); assert.ok(has(soft('<div className="rounded-[10px]" />'), 'arbitrary-value')); });
+t('S16 rem converted', () => assert.match(soft('<div className="gap-[1.5rem]" />').find((x) => x.id === 'arbitrary-value').snippet, /gap-6 \(24px\)/));
+t('S16 scale class / tracking / env passes', () => assert.ok(!has(soft('<div className="p-4 text-5 tracking-[-0.02em] pb-[env(safe-area-inset-bottom)] w-[320px]" />'), 'arbitrary-value')));
+t('S17 zoom disabled meta', () => assert.ok(has(soft('<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">'), 'zoom-disabled')));
+t('S17 Next viewport export', () => assert.ok(has(soft('export const viewport = { width: "device-width", maximumScale: 1, userScalable: false };\n<div className="x" />'), 'zoom-disabled')));
+t('S17 normal viewport passes', () => assert.ok(!has(soft('<meta name="viewport" content="width=device-width, initial-scale=1">'), 'zoom-disabled')));
+t('S18 layout transition', () => { assert.ok(has(soft('a{transition: height 200ms ease}'), 'layout-transition')); assert.ok(has(soft('<div className="transition-[width]" />'), 'layout-transition')); });
+t('S18 transform transition passes', () => assert.ok(!has(soft('a{transition: transform 200ms, opacity 150ms}'), 'layout-transition')));
+t('S19 dark: branch', () => assert.ok(has(soft('<div className="bg-layer-default dark:bg-neutral-solid" />'), 'dark-branch')));
+t('S20 trailing arrow on CTA', () => { assert.ok(has(soft('<button>시작하기 →</button>'), 'trailing-arrow')); assert.ok(has(soft("const cta = '더 보기 →';"), 'trailing-arrow')); });
+t('S20 route arrow in text passes', () => assert.ok(!has(soft('<p>서울 → 부산 KTX</p>'), 'trailing-arrow')));
+t('S21 div onClick', () => { assert.ok(has(soft('<div className="p-4" onClick={open}>열기</div>'), 'div-click')); assert.ok(has(soft('<tr onClick={go}>'), 'div-click')); });
+t('S21 button / role passes', () => { assert.ok(!has(soft('<button onClick={open}>열기</button>'), 'div-click')); assert.ok(!has(soft('<div role="button" tabIndex={0} onClick={open}>열기</div>'), 'div-click')); });
+t('S22 label-in-name mismatch', () => assert.ok(has(soft('<button aria-label="요금제 고르기">선택</button>'), 'label-in-name')));
+t('S22 label contains visible text passes', () => assert.ok(!has(soft('<button aria-label="요금제 A 선택">선택</button>'), 'label-in-name')));
+t('S23 register mixed (auto) flags minority', () => { const r = soft('<p>저장했어요.</p>\n<p>삭제했어요.</p>\n<p>완료되었습니다.</p>').filter((x) => x.id === 'copy-register'); assert.equal(r.length, 1); assert.equal(r[0].line, 3); });
+t('S23 single register passes', () => assert.ok(!has(soft('<p>저장했어요.</p>\n<p>다시 시도해 주세요.</p>'), 'copy-register')));
+t('S23 copy_register: haeyo flags 합니다체', () => assert.ok(has(soft('<p>저장되었습니다.</p>', { copy_register: 'haeyo' }), 'copy-register')));
+t('S23 over-polite 시겠어요', () => assert.ok(has(soft('<p>삭제하시겠어요?</p>'), 'copy-register')));
+t('S23 korean inline comment ignored', () => assert.ok(!has(soft('<p>저장했어요.</p>\nconst x = 1; // 초기화합니다\n{/* 설명입니다 */}'), 'copy-register')));
+t('S23 좋아요 button is a noun', () => assert.ok(!has(soft('<p>등록되었습니다.</p>\n<button>좋아요</button>'), 'copy-register')));
+
+// ── Stop: 이번에 바뀐 줄만 + 규칙별 묶음
+t('addedLines parses -U0 hunks', () => {
+  const m = addedLines('diff --git a/src/A.tsx b/src/A.tsx\n--- a/src/A.tsx\n+++ b/src/A.tsx\n@@ -3 +3,2 @@\n-x\n+y\n+z\n@@ -10,0 +12 @@\n+w\n--- a/src/B.tsx\n+++ /dev/null\n@@ -1 +0,0 @@\n-gone');
+  assert.deepEqual([...m.get('src/A.tsx')], [3, 4, 12]);
+  assert.equal(m.has('src/B.tsx'), false);
+});
+t('formatGrouped caps rule kinds at 4', () => {
+  const f = (id, line) => ({ rule: 'S' + id.length, id, line, file: 'a.tsx', snippet: id, fix: 'fix-' + id });
+  const out = formatGrouped([f('a', 1), f('a', 2), f('bb', 3), f('ccc', 4), f('dddd', 5), f('eeeee', 6)]);
+  assert.match(out, /a\.tsx:1, a\.tsx:2/);
+  assert.match(out, /외 규칙 1종\(eeeee\)/);
+  assert.ok(!out.includes('fix-eeeee'));
+});
+t('formatGrouped puts a11y/copy rules first', () => {
+  const f = (rule, id) => ({ rule, id, line: 1, file: 'a.tsx', snippet: id, fix: 'fix-' + id });
+  const out = formatGrouped([f('S6', 'z-arbitrary'), f('S7', 'transition-all'), f('S5', 'h-screen'), f('S16', 'arbitrary-value'), f('S21', 'div-click')]);
+  assert.ok(out.indexOf('div-click') < out.indexOf('z-arbitrary'));
+  assert.match(out, /외 규칙 1종\(arbitrary-value\)/);
+});
+t('integration --stop: soft only on changed lines', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ui-lint-stop-'));
+  const script = path.join(path.dirname(fileURLToPath(import.meta.url)), 'design-lint.mjs');
+  const g = (a) => spawnSync('git', a, { cwd: root, encoding: 'utf8' });
+  if (g(['init', '-q']).status !== 0) { fs.rmSync(root, { recursive: true, force: true }); return; } // git 없음 → 건너뜀
+  g(['config', 'user.email', 't@t']); g(['config', 'user.name', 't']);
+  fs.writeFileSync(path.join(root, 'DESIGN.md'), '---\nui_skill_set: 0.1\ntoken_prefix: ui\n---\n');
+  fs.mkdirSync(path.join(root, 'src'));
+  fs.writeFileSync(path.join(root, 'src', 'Legacy.tsx'), '<section className="h-screen" />\n<p className="text-fg-neutral">a</p>\n');
+  g(['add', '-A']); g(['commit', '-qm', 'init']);
+  const stop = () => spawnSync(process.execPath, [script, '--stop'], { cwd: root, input: '{}', env: { ...process.env, CLAUDE_PROJECT_DIR: root }, encoding: 'utf8' });
+  // 다른 줄만 수정 → 레거시 h-screen 은 지적하지 않음
+  fs.writeFileSync(path.join(root, 'src', 'Legacy.tsx'), '<section className="h-screen" />\n<p className="text-fg-brand">b</p>\n');
+  let out = JSON.parse(stop().stdout);
+  assert.ok(!out.decision, JSON.stringify(out));
+  // 새 줄에 소프트 위반 추가 → block
+  fs.writeFileSync(path.join(root, 'src', 'Legacy.tsx'), '<section className="h-screen" />\n<p className="text-fg-brand">b</p>\n<div className="z-[9999]" />\n');
+  out = JSON.parse(stop().stdout);
+  assert.equal(out.decision, 'block');
+  assert.match(out.reason, /z-arbitrary/);
+  assert.ok(!/h-screen/.test(out.reason), out.reason);
+  fs.rmSync(root, { recursive: true, force: true });
+});
 
 // ── 통합: --all 종료 코드 + 토큰 커버리지 (하드 위반만 exit 1, 소프트는 exit 0)
 t('integration --all exit codes and coverage', () => {

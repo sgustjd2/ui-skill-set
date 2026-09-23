@@ -13,6 +13,7 @@ gradient_policy: none
 tailwind_palette: deny
 hardcoded_color: block
 radius_scale: soft
+copy_register: haeyo
 ---
 
 # DESIGN.md
@@ -42,6 +43,7 @@ UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
 - 굵기 3종만: 400 / 500 / 700.
 - 한글: `word-break: keep-all` 전역. 본문 행간 ≥ 1.5. `tracking-tighter` 금지(-0.02em까지). 측정폭 30~45자.
 - 숫자·가격: `tabular-nums`, 통화 표기 한 가지로 통일.
+- 카피: **해요체**(`copy_register: haeyo`). 과한 경어(~하시겠어요·께·계시다) 없이, 능동형·긍정형. 에러는 문제 + 다음 행동. 합니다체 제품이면 `hamnida`로 바꾼다.
 
 ## 4. 레이아웃·간격
 
@@ -49,6 +51,7 @@ UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
 - 브레이크포인트: base 0 · sm 480 · md 768 · lg 1280 · xl 1440. 모바일 우선.
 - 컨테이너 최대폭 1040px (넓은 탐색 화면 1280). 화면 거터 16px(base/sm) · 32px(md+).
 - 그리드 우선. flex 퍼센트 계산 금지. `h-screen` 대신 `min-h-dvh`.
+- Safe area: `viewport-fit=cover`. 누를 것·읽을 것은 안전 영역 안, 배경은 끝까지. 하단 고정 바 `pb-[calc(env(safe-area-inset-bottom)+16px)]`.
 
 ## 5. 형태·깊이
 
@@ -71,7 +74,8 @@ UI 작업 전 반드시 읽는다. 바꾸려면 §8에 이유를 남긴다.
 - 모든 인터랙티브 요소에 **상태 5종** 구현: hover · disabled · loading · error · empty(목록/데이터).
 - 터치 타겟 ≥ 44px. `focus-visible` 링 보임(토큰이 처리). 아이콘 라이브러리 1종(`lucide-react`), 스트로크 굵기 고정(1.75).
 - 이모지는 아이콘이 아니다. 로딩은 스켈레톤(`--ui-gradient-shimmer`), 스피너는 버튼 안에서만.
-- 폼: 라벨은 인풋 위, 에러는 아래, placeholder를 라벨로 쓰지 않는다.
+- 폼: 라벨은 인풋 위, 에러는 아래, placeholder를 라벨로 쓰지 않는다. 에러 스타일은 `user-invalid:`.
+- 다이얼로그 보조 버튼: 닫기만 하면 **"닫기"**. "취소"는 진행 중인 작업을 실제로 되돌릴 때만.
 
 ## 8. 금지와 허용 예외
 

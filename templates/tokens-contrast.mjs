@@ -30,7 +30,7 @@ export const PAIRS = [
   ['--ui-color-fg-critical', '--ui-color-bg-critical-weak', 4.5, 'critical 배지'],
   ['--ui-color-fg-brand', '--ui-color-bg-brand-weak', 4.5, '브랜드 배지(추천)'],
   ['--ui-color-stroke-focus', '--ui-color-bg-layer-default', 3.0, '포커스 링'],
-  ['--ui-color-fg-placeholder', '--ui-color-bg-layer-default', 3.0, 'placeholder(라벨 필수 힌트, 3:1)'],
+  ['--ui-color-fg-placeholder', '--ui-color-bg-layer-default', 4.5, 'placeholder(텍스트, WCAG 1.4.3)'],
 ];
 
 function blockBody(css, sel) {

@@ -60,5 +60,19 @@ t('missing accessible name → warn', () => {
 });
 t('img without alt → warn', () => assert.ok(evaluate({ ...okData, imgs: [{ hasAlt: false }] }, 1280).some((x) => x.id === 'img-alt')));
 
+// ── 2026-09: 확대 차단 · WCAG 2.5.8 24px
+t('zoom disabled → blocker', () => assert.ok(evaluate({ ...okData, viewportContent: 'width=device-width, maximum-scale=1.0, user-scalable=no' }, 375).some((x) => x.id === 'zoom-disabled' && x.severity === 'blocker')));
+t('normal viewport content passes', () => assert.ok(!evaluate({ ...okData, viewportContent: 'width=device-width, initial-scale=1, maximum-scale=5' }, 375).some((x) => x.id === 'zoom-disabled')));
+t('target < 24px → blocker at desktop too', () => {
+  const d = { ...okData, interactive: [{ tag: 'button', w: 20, h: 20, hasName: true, focusVisible: true }] };
+  const f = evaluate(d, 1280);
+  assert.ok(f.some((x) => x.id === 'target-size' && x.severity === 'blocker'));
+  assert.ok(!evaluate(d, 375).some((x) => x.id === 'touch-target'), '24px blocker와 44px warn 중복 없음');
+});
+t('inline link / labelled checkbox exempt from 24px', () => {
+  const d = { ...okData, interactive: [{ tag: 'a', w: 40, h: 18, hasName: true, focusVisible: true, inline: true }, { tag: 'input', w: 16, h: 16, hasName: true, focusVisible: true, labelled: true }] };
+  assert.ok(!evaluate(d, 1280).some((x) => x.id === 'target-size'));
+});
+
 console.log(failed ? `${failed} failed, ${n} passed` : `ok — ${n} tests`);
 process.exit(failed ? 1 : 0);

@@ -44,6 +44,14 @@ export function contrastThreshold(fontSizePx, bold) {
 
 // ─── 브라우저에서 실행되어 DOM 데이터만 수집 ─────────────────────────────────
 function collectInPage() {
+  // 계산값이 oklab()/oklch()/color(srgb …)로 오면(Tailwind v4의 /opacity 등) rgb 파서가 못 읽는다 → 캔버스로 rgba 정규화
+  const cx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  const norm = (c) => {
+    if (!c || /^rgba?\(/i.test(c)) return c;
+    cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = c; cx.fillRect(0, 0, 1, 1);
+    const [r, g, b, a] = cx.getImageData(0, 0, 1, 1).data;
+    return `rgba(${r}, ${g}, ${b}, ${Math.round((a / 255) * 1000) / 1000})`;
+  };
   const vis = (el) => {
     const r = el.getBoundingClientRect();
     if (r.width < 1 || r.height < 1) return false;
@@ -53,12 +61,12 @@ function collectInPage() {
   const effBg = (el) => {
     let n = el;
     while (n && n.nodeType === 1) {
-      const bg = getComputedStyle(n).backgroundColor;
+      const bg = norm(getComputedStyle(n).backgroundColor);
       const m = bg && bg.match(/rgba?\(([^)]+)\)/i);
       if (m) { const p = m[1].split(/[,\s/]+/).map(Number); if ((p[3] === undefined ? 1 : p[3]) > 0.1) return bg; }
       n = n.parentElement;
     }
-    return getComputedStyle(document.body).backgroundColor || 'rgb(255,255,255)';
+    return norm(getComputedStyle(document.body).backgroundColor) || 'rgb(255,255,255)';
   };
 
   // 텍스트 노드 표본
@@ -71,7 +79,7 @@ function collectInPage() {
     const el = node.parentElement;
     if (!el || !vis(el)) continue;
     const s = getComputedStyle(el);
-    texts.push({ color: s.color, bg: effBg(el), fontSize: parseFloat(s.fontSize), weight: +s.fontWeight || 400, sample: t.slice(0, 24) });
+    texts.push({ color: norm(s.color), bg: effBg(el), fontSize: parseFloat(s.fontSize), weight: +s.fontWeight || 400, sample: t.slice(0, 24) });
     count++;
   }
 
@@ -81,11 +89,15 @@ function collectInPage() {
   for (const el of els) {
     const r = el.getBoundingClientRect();
     const name = (el.getAttribute('aria-label') || el.textContent || el.getAttribute('title') || el.getAttribute('alt') || (el.labels && el.labels.length ? el.labels[0].textContent : '') || (el.tagName === 'INPUT' ? el.getAttribute('placeholder') : '') || '').trim();
+    // 포커스 전후 비교: 원래 있던 그림자(shadow-1 카드 등)를 포커스 표시로 오인하지 않는다
+    const shadowBefore = getComputedStyle(el).boxShadow;
     el.focus();
     const fs = getComputedStyle(el);
-    const focusVisible = (fs.outlineStyle !== 'none' && parseFloat(fs.outlineWidth) > 0) || (fs.boxShadow && fs.boxShadow !== 'none');
+    const focusVisible = (fs.outlineStyle !== 'none' && parseFloat(fs.outlineWidth) > 0) || (fs.boxShadow !== shadowBefore && fs.boxShadow !== 'none');
     el.blur();
-    interactive.push({ tag: el.tagName.toLowerCase(), w: Math.round(r.width), h: Math.round(r.height), hasName: name.length > 0, focusVisible });
+    const inline = getComputedStyle(el).display === 'inline'; // 문장 속 링크는 2.5.8 예외
+    const labelled = /^(checkbox|radio)$/.test(el.type) && !!(el.labels && el.labels.length);
+    interactive.push({ tag: el.tagName.toLowerCase(), w: Math.round(r.width), h: Math.round(r.height), hasName: name.length > 0, focusVisible, inline, labelled });
   }
 
   const imgs = [...document.querySelectorAll('img')].filter(vis).map((i) => ({ hasAlt: i.hasAttribute('alt') }));
@@ -98,8 +110,12 @@ function collectInPage() {
     h1: document.querySelectorAll('h1').length,
     lang: document.documentElement.getAttribute('lang') || '',
     viewport: !!document.querySelector('meta[name=viewport]'),
+    viewportContent: document.querySelector('meta[name=viewport]')?.getAttribute('content') || '',
   };
 }
+
+/** 확대 차단(WCAG 1.4.4). design-lint S17과 같은 판정 */
+export const ZOOM_OFF = /user-scalable\s*=\s*(?:no|0)\b|maximum-scale\s*=\s*1(?:\.0+)?(?![\d.])/i;
 
 // ─── 수집 데이터 → 판정 ──────────────────────────────────────────────────────
 export function evaluate(data, vw) {
@@ -110,6 +126,7 @@ export function evaluate(data, vw) {
   if (data.overflow) add('blocker', 'horizontal-overflow', `가로 스크롤 발생 (scrollWidth ${data.scrollWidth} > ${data.innerWidth})`);
   if (!data.lang) add('blocker', 'missing-lang', '<html>에 lang 속성 없음');
   if (!data.viewport) add('blocker', 'missing-viewport', 'meta[name=viewport] 없음');
+  if (ZOOM_OFF.test(data.viewportContent || '')) add('blocker', 'zoom-disabled', `확대 차단 (WCAG 1.4.4): ${data.viewportContent}`);
   if (data.h1 !== 1) add('warn', 'h1-count', `h1이 ${data.h1}개 (1개 권장)`);
 
   let contrastFails = 0;
@@ -125,8 +142,12 @@ export function evaluate(data, vw) {
   }
   if (contrastFails > 6) add('blocker', 'low-contrast', `… 외 대비 미달 ${contrastFails - 6}건`);
 
+  // WCAG 2.2 2.5.8(AA) 24×24px는 모든 뷰포트에서 blocker. 문장 속 링크·라벨 달린 체크박스/라디오는 예외로 본다
+  const tiny = data.interactive.filter((e) => (e.w < 24 || e.h < 24) && !e.inline && !e.labelled);
+  for (const e of tiny.slice(0, 5)) add('blocker', 'target-size', `<${e.tag}> ${e.w}×${e.h}px < 24px (WCAG 2.5.8)`);
+  if (tiny.length > 5) add('blocker', 'target-size', `… 외 24px 미만 타겟 ${tiny.length - 5}건`);
   if (mobile) {
-    const small = data.interactive.filter((e) => e.w < 44 || e.h < 44);
+    const small = data.interactive.filter((e) => (e.w < 44 || e.h < 44) && !tiny.includes(e) && !e.inline);
     for (const e of small.slice(0, 5)) add('warn', 'touch-target', `<${e.tag}> ${e.w}×${e.h}px < 44px (모바일)`);
     if (small.length > 5) add('warn', 'touch-target', `… 외 작은 터치타겟 ${small.length - 5}건`);
   }

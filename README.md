@@ -119,7 +119,7 @@ Claude는 이 메시지를 받아 **토큰으로 고쳐서** 다시 저장한다
 ## 브랜드 색 바꾸기 (가장 흔한 커스터마이징)
 
 1. `src/styles/tokens.css`를 연다. **원색은 이 파일에만** 있다.
-2. `:root`의 `--ui-accent-100`(가장 밝음)~`--ui-accent-900`(가장 어두움)을 브랜드 램프로 교체.
+2. `:root`의 `--ui-accent-100`(가장 밝음)~`--ui-accent-900`(가장 어두움)을 브랜드 램프로 교체. 램프를 새로 만든다면 OKLCH로 명도(L) 단계를 gray 스케일과 맞추고, 범위를 벗어나면 채도만 줄인다(토스 TDS 컬러 시스템, 2025-12). 브랜드가 없다고 크림+테라코타·검정+형광 초록을 고르지 않는다. 보라 다음으로 흔한 AI 기본값이다.
 3. `:root[data-theme="dark"]`의 같은 토큰도 다크용 값으로 교체(다크는 보통 라이트를 뒤집은 명도).
 4. **대비 확인**(필수):
 
@@ -190,7 +190,7 @@ npm i -D playwright && npx playwright install chromium   # 최초 1회
 node .claude/hooks/design-audit.mjs http://localhost:5173
 ```
 
-뷰포트 375/768/1280에서: 대비 4.5:1(큰 글자 3:1) 미달·가로 스크롤·`<html lang>`/viewport 누락은 **blocker(exit 1)**; 44px 미만 터치타겟·안 보이는 포커스·이름 없는 버튼·alt 없는 이미지·h1 개수는 **warn**. playwright가 없으면 안내 후 exit 0(CI를 안 깬다).
+뷰포트 375/768/1280에서: 대비 4.5:1(큰 글자 3:1) 미달·가로 스크롤·`<html lang>`/viewport 누락·확대 차단(`user-scalable=no`)·24px 미만 타겟(WCAG 2.5.8, 문장 속 링크 제외)은 **blocker(exit 1)**; 44px 미만 터치타겟(모바일)·안 보이는 포커스(포커스 전후 비교)·이름 없는 버튼·alt 없는 이미지·h1 개수는 **warn**. 계산된 색이 `oklab()`/`oklch()`/`color(srgb …)`로 와도(Tailwind v4 `/opacity` 등) 캔버스로 정규화해 대비를 잰다. playwright가 없으면 안내 후 exit 0(CI를 안 깬다).
 
 ### Figma 토큰 동기화
 
@@ -236,16 +236,16 @@ node eval/consistency.mjs runs/01-settings --roles      # 역할별(코어) 일�
 
 | | 룰 | 잡는 것 | 고치는 법 |
 |---|---|---|---|
-| R1 | `gradient` | `linear-gradient(…)`, `bg-linear-to-*`, `bg-gradient-to-*` | 단색 토큰. 예외는 `/* ui-lint-allow gradient: <이유> */` |
+| R1 | `gradient` | `linear-gradient(…)`, `bg-linear-*`(`-to-r`·`-45`·`-(--x)`), `bg-gradient-to-*`, `bg-radial`·`bg-conic` | 단색 토큰. 예외는 `/* ui-lint-allow gradient: <이유> */` |
 | R2 | `ai-purple` | `#7c3aed` 등 hex 9개, `text-indigo-*` 등 | 브랜드 토큰. 브랜드가 보라면 `brand_hue: purple` |
-| R3 | `hardcoded-color` | 컴포넌트의 hex/rgb/oklch, `bg-blue-500` 류 팔레트 클래스 | `var(--ui-color-…)` / `bg-brand-solid` |
-| R4 | `hardcoded-font` | `font-family: Inter`, Google Fonts 링크, `font-['…']` | `var(--ui-font-sans)` / `font-sans` |
+| R3 | `hardcoded-color` | 컴포넌트의 hex/rgb/oklch/hwb/`color(display-p3 …)`, `bg-blue-500` 류 팔레트 클래스(v4.2 `mauve`·`olive`·`mist`·`taupe`, `scrollbar-thumb-*` 포함). 토큰 파생 `color-mix(in oklab, var(--ui-…) …)`은 허용 | `var(--ui-color-…)` / `bg-brand-solid` |
+| R4 | `hardcoded-font` | `font-family: Inter`, Google Fonts 링크, `font-['…']`·`font-[Open_Sans]`, DESIGN.md에 없는 `next/font/google`·`@fontsource/*` | `var(--ui-font-sans)` / `font-sans` |
 
 ### 소프트 룰 (종료 전 1회 지적, Stop)
 
-`--stop`에서만 발화하고 한 번만 block한다(고친 뒤 다시 종료하면 통과). CI(`--all`)는 소프트로 실패하지 않는다.
+`--stop`에서만 발화하고 한 번만 block한다(고친 뒤 다시 종료하면 통과). **이번 세션에서 추가·수정한 줄만** 보고(레거시 파일의 기존 부채는 `--all`로), 규칙은 **최대 4종**으로 묶어 보여 준다(한 번에 주입하는 규칙이 적어야 지켜진다). CI(`--all`)는 소프트로 실패하지 않는다.
 
-`glass-decorative` · `emoji-as-icon` · `heavy-shadow` · `bounce-easing` · `h-screen` · `z-arbitrary` · `transition-all` · `eyebrow` · `side-tab` · `img-hover-scale` · `pure-bw` · `em-dash` · `break-all`(한글) · `korean-tracking` · `buzzword`(한/영).
+`glass-decorative` · `emoji-as-icon` · `heavy-shadow` · `bounce-easing` · `h-screen` · `z-arbitrary` · `transition-all` · `eyebrow` · `side-tab` · `img-hover-scale` · `pure-bw` · `em-dash` · `break-all`(한글) · `korean-tracking` · `buzzword`(한/영) · `arbitrary-value`(`p-[13px]`→`p-3` 제안) · `zoom-disabled` · `layout-transition` · `dark-branch` · `trailing-arrow`(CTA 끝 `→`) · `div-click` · `label-in-name`(WCAG 2.5.3) · `copy-register`(해요체/합니다체 혼용, 과한 경어).
 
 ### 스택별 설치
 
@@ -278,10 +278,10 @@ templates/                   ← 프로젝트에 복사되는 것
   install.mjs                ← 설치기
   settings.json · CLAUDE.snippet.md
 eval/                        ← 골든 프롬프트 + 일관성 측정 + 실측 기준선
-docs/                        ← PRD + 레퍼런스 분석
+docs/                        ← PRD + 레퍼런스 분석(2026-09 업계 동향 반영 포함)
 ```
 
-DESIGN.md frontmatter(린터가 읽는 정책): `mode_default` · `stack` · `token_prefix` · `brand_hue` · `font_families` · `gradient_policy` · `tailwind_palette` · `hardcoded_color` · `radius_scale`.
+DESIGN.md frontmatter(린터가 읽는 정책): `mode_default` · `stack` · `token_prefix` · `brand_hue` · `font_families` · `gradient_policy` · `tailwind_palette` · `hardcoded_color` · `radius_scale` · `copy_register`(`haeyo` 기본 · `hamnida` · `auto`=혼용만 지적, `--legacy` 설치 시 auto).
 
 ---
 

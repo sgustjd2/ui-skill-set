@@ -10,18 +10,20 @@
 - [ ] 그림자 쓴 요소 ≤ 3개. 그림자 값은 토큰 3단계 중 하나.
 - [ ] 라디우스 값은 `control | card | sheet | full` 중 하나만. 임의 px 없음.
 - [ ] 이모지·유니코드 글리프를 아이콘으로 쓴 곳 0개. 아이콘 라이브러리 1종.
-- [ ] `h-screen`/`100vh` 0개 (→ `dvh`). `transition: all` 0개. `z-[999]`류 임의 z-index 0개. bounce/elastic 이징 0개.
+- [ ] `h-screen`/`100vh` 0개 (→ `dvh`). `transition: all`·레이아웃 속성 전이 0개. `z-[999]`/`z-999`류 임의 z-index 0개. bounce/elastic/`linear()` 오버슈트 이징 0개.
+- [ ] 임의값 `p-[13px]`·`text-[13px]`·`rounded-[10px]` 0개. `dark:` 분기 0개. `<div onClick>` 0개.
 - [ ] `word-break: break-all` 0개. `tracking-tighter` 0개 (한글).
 - [ ] em-dash(—) 0개 — 화면에 보이는 텍스트.
 - [ ] primary CTA 화면당 1개. 같은 의도의 버튼 중복 0개.
-- [ ] `<html lang="ko">`.
+- [ ] `<html lang="ko">`. viewport에 `user-scalable=no`/`maximum-scale=1` 없음.
+- [ ] 존댓말 한 체계(`copy_register`, 기본 해요체). "~하시겠어요?"·"되었어요" 0개. 닫기만 하는 버튼은 "닫기".
 
 ## 판단 (눈으로)
 - [ ] 상태 5종: hover · disabled · loading(스켈레톤) · error · empty.
 - [ ] 대비: 본문 4.5:1, 큰 글자·아이콘·포커스 3:1. 버튼 텍스트가 배경 위에서 읽힌다. 폼 플레이스홀더·헬퍼·에러 텍스트도.
 - [ ] 액센트 1색이 페이지 전체에서 같은 역할로 쓰인다. 7번째 섹션에서 갑자기 다른 색 CTA 없음.
 - [ ] 한 화면 안에서 라이트/다크 섹션 섞이지 않음. 다크모드에서 한 번 확인.
-- [ ] 터치 타겟 ≥ 44px, 사이 간격 ≥ 8px. 키보드로 전부 도달 가능, 포커스 링 보임.
+- [ ] 터치 타겟 ≥ 44px(최소 24px), 사이 간격 ≥ 8px. 키보드로 전부 도달 가능, 포커스 링(`outline`) 보임. 하단 고정 바는 safe area 안.
 - [ ] `prefers-reduced-motion`에서 깨지지 않음.
 - [ ] 375 / 768 / 1280에서 가로 스크롤 없음, 고정 내비 뒤에 가려진 콘텐츠 없음.
 - [ ] 실제 카피. 로렘 입숨·홍길동·`99.9%`·"차세대"·"혁신적인" 없음. 성공 메시지에 느낌표 없음. 에러는 문제 + 복구.

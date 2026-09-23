@@ -151,7 +151,7 @@
 | FR-5 | `templates/settings.json`: PreToolUse + Stop 배선 | P0 | M0 |
 | FR-6 | `skills/ui-design/SKILL.md`: 절차 §5.2, 구체적 description(트리거 표면 열거 + "not for backend") | P0 | M0 |
 | FR-7 | CLAUDE.md 스니펫 | P0 | M0 |
-| FR-8 | `design-lint.mjs --stop`: 소프트 룰 S1~S15, 체크리스트, 1회 block | P1 | M1 |
+| FR-8 | `design-lint.mjs --stop`: 소프트 룰 S1~S23(M4에서 S16~), 체크리스트, 1회 block | P1 | M1 |
 | FR-9 | `references/`: craft-floor, banned, korean-typography, states-and-a11y, preflight | P1 | M1 |
 | FR-10 | `skills/ui-init/SKILL.md`: 질문 3개 → 파일 생성, `--legacy` 완화 모드, `--update` 재설치 | P1 | M1 |
 | FR-11 | `design-lint.mjs --all`: CI용, 하드 위반 시 exit 1, 요약 리포트(토큰 커버리지 %) | P1 | M1 |
@@ -197,6 +197,16 @@ R1이 사용자의 핵심 요구다. R2는 R1과 함께 "AI 슬롭"의 90%를 �
 | S13 | `korean-break-all` | `word-break:\s*break-all`, `break-all` | **신규** |
 | S14 | `korean-tracking` | `tracking-tighter`, `letter-spacing:\s*-0\.0[3-9]` 이상 | **신규** |
 | S15 | `buzzword` | "혁신적인", "차세대", "seamless", "unleash" 등 마케팅 상투어 (ko+en) | impeccable BUZZWORDS + 한국어 추가 |
+| S16 | `arbitrary-value` | `p-[13px]`·`text-[13px]`·`rounded-[10px]` 등 간격·글자·라디우스 임의값. 스니펫에 4px 그리드 대체 클래스 제안. 자간·`env()` 계산은 제외 | shadcn-ui/lint (2026-09) |
+| S17 | `zoom-disabled` | `user-scalable=no`, `maximum-scale=1`, Next `viewport` export | Vercel web-interface-guidelines, WCAG 1.4.4 |
+| S18 | `layout-transition` | width/height/padding/margin 전이 | impeccable |
+| S19 | `dark-branch` | `dark:bg-*` 등 색 유틸 분기 (§2 금지 항목의 탐지기) | shadcn skill |
+| S20 | `trailing-arrow` | CTA 끝 `→` 글리프 | Anthropic frontend-design (2026-09) |
+| S21 | `div-click` | role 없는 `<div|span|li|tr|td onClick>` | Vercel, 토스 A11y Fundamentals |
+| S22 | `label-in-name` | `aria-label`이 보이는 텍스트를 포함하지 않음 | WCAG 2.5.3, KWCAG 2.2 6.5.3 |
+| S23 | `copy-register` | 해요체/합니다체 혼용(파일 단위, 소수 쪽 지적), `copy_register`와 다른 체계, 과한 경어(~시겠어요·되었어요) | 토스 앱인토스 UX 가이드 · 8가지 라이팅 원칙 |
+
+Stop은 **이번에 추가·수정한 줄만**(`git diff -U0 HEAD` 헝크, untracked는 전체) 소프트 룰을 보고하고, 규칙은 **최대 4종**으로 묶어 보인다. 근거: 토스 기술블로그 "AI가 팀 규칙을 지키도록"(2026-09-08) — 완료 직전 훅은 규칙 최대 4개, 세션 앞머리 몰아넣기는 lost-in-the-middle로 실패. 레거시 부채는 `--all`에서 본다.
 
 ### 7.3 체크리스트 (Stop 메시지에 첨부, 정규식 불가 항목)
 - 상태 5종 구현됐나 (hover / disabled / loading / error / empty)
@@ -485,8 +495,9 @@ radius_scale: soft         # sharp | soft | pill
 | **M1 룰 완성** | ✅ 완료 | FR-8~11. `--stop`(소프트 S1~S15), `--all`(토큰 커버리지 %), references 5개, `ui-init`(+`--legacy`, `--update`) | 레거시 프로젝트 1개 온보딩, 오탐 ≤ 5% |
 | **M2 배포** | ✅ 완료 | FR-12~13. `.claude-plugin/` 매니페스트, `skills/llms.txt`, README(ko), 골든 프롬프트 5개 + `eval/consistency.mjs` | 다른 작업자가 README만 보고 설치·사용 성공 |
 | **M3 확장** | ✅ 완료 | FR-14 ✅ Tailwind v3 브릿지. FR-15 ✅ 런타임 감사. FR-16 ✅ Figma 동기화 | |
+| **M4 2026-09 동향 반영** | ✅ 완료 | [research/2026-09-trends.md](research/2026-09-trends.md). Tailwind 4.1~4.3 우회 수정, 소프트 S16~S23, Stop 변경 줄만·규칙 4종, audit 색 정규화·2.5.8·줌·포커스, theme.css 브레이크포인트·dark 변형·그림자 네임스페이스, placeholder 4.5:1, 해요체 UX 라이팅 | 실제 Tailwind 4.3.3·3.4.19 빌드, 브라우저 프로브로 검증 |
 
-**테스트**: design-lint 91 + install 20 + audit 24 + figma 17 + tokens-contrast 4 + consistency 6 = 162개, 전부 통과.
+**테스트**: design-lint 145 + install 20 + audit 28 + figma 17 + tokens-contrast 4 + consistency 11 = 225개, 전부 통과 (2026-09-23).
 
 **FR-16 Figma 토큰 동기화**(2026-09-02): `figma-sync.mjs`가 Figma 변수(색 팔레트, Light/Dark 모드)를 REST로 읽어 tokens.css의 scale 색 토큰을 갱신한다. 색만 대상(gray/accent/red/green/blue 램프), 시맨틱·간격·라디우스는 안 건드림. 순수 로직(hexFromFigma/parseFigmaVariables/applyToTokensCss)은 실제 API 응답 형태 픽스처로 17개 테스트. dry-run 기본, `--write`로 반영. Variables API는 Enterprise 전용이라 403이면 플러그인 export를 `--from <json>`으로 받는다. FIGMA_TOKEN 없으면 안내 후 exit 0(CI 안 깸). 니치라 install에 자동 포함 안 하고 checkout에서 실행.
 

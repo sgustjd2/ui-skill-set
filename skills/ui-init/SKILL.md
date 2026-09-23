@@ -4,7 +4,7 @@ description: >
   ui-skill-set을 현재 프로젝트에 설치한다. DESIGN.md·tokens.css·design-lint 훅·ui-design 스킬·CLAUDE 규약을
   넣는다. 신규 프로젝트 세팅, "UI 스킬셋 설치", "디자인 토큰 세팅", 레거시 프로젝트 온보딩(--legacy),
   기존 설치 업데이트(--update)에 사용한다.
-version: 0.1.0
+version: 0.2.0
 user-invocable: true
 argument-hint: "[--legacy | --update]"
 allowed-tools:

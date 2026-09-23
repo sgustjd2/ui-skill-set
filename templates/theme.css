@@ -75,8 +75,23 @@
   --shadow-1: var(--ui-shadow-1);
   --shadow-2: var(--ui-shadow-2);
   --shadow-3: var(--ui-shadow-3);
+  /* v4.1+ 그림자 네임스페이스도 비운다 (drop-shadow-md·inset-shadow-sm·text-shadow-lg가 기본값을 내보내지 않게) */
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+
+  /* 브레이크포인트 = DESIGN.md §4 (base 0 · sm 480 · md 768 · lg 1280 · xl 1440). 기본값(640/1024/1536)을 지운다 */
+  --breakpoint-*: initial;
+  --breakpoint-sm: 30rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 80rem;
+  --breakpoint-xl: 90rem;
 
   --ease-standard: var(--ui-ease-standard);
   --ease-enter: var(--ui-ease-enter);
   --ease-exit: var(--ui-ease-exit);
 }
+
+/* dark: 변형을 data-theme 전환에 맞춘다. (기본은 prefers-color-scheme라 토큰 전환과 어긋남)
+   dark: 분기 자체는 DESIGN.md §2 금지(design-lint S19). 이건 새어 들어온 dark: 가 최소한 같은 스위치를 따르게 하는 안전망 */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));

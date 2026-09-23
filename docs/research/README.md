@@ -11,6 +11,8 @@ PRD(`../PRD.md`) §3의 근거. 각 파일은 해당 저장소를 정밀 분석�
 
 보고서는 영어(분석 에이전트 출력 원문)이며, 정규식·훅 JSON·토큰 값은 원문 그대로 인용되어 있어 구현 시 바로 참조할 수 있다.
 
+**후속 조사 (2026-09-23)**: [2026-09-trends.md](2026-09-trends.md). 위 4개 저장소의 이후 변화, 토스·seed-design 국내 자료, Anthropic `frontend-design`·shadcn/lint·Google DESIGN.md 포맷, Tailwind 4.1~4.3·Baseline·WCAG 2.2/3 현황과 무엇을 반영/보류했는지.
+
 ## 한 줄 결론
 
 | 저장소 | 준다 | 못 준다 |
