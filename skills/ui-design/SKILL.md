@@ -5,7 +5,7 @@ description: >
   프로젝트의 DESIGN.md와 tokens.css만으로 구현하고, 그라데이션·하드코딩 색·이모지 아이콘 같은
   AI 기본 미학을 피한다. 색·타이포·간격·라디우스·그림자·모션·상태·접근성·한국어 타이포 포함.
   백엔드 전용·비UI 작업에는 사용하지 않는다.
-version: 0.2.0
+version: 0.3.0
 user-invocable: true
 argument-hint: "[화면 또는 컴포넌트 설명]"
 allowed-tools:

@@ -320,7 +320,7 @@ ui-skill-set/
 
 - UI 파일: `.tsx .jsx .vue .svelte .astro .html .css .scss .less` + JSX/`styled`/`css\`` 를 포함하는 `.ts .js`
 - 항상 스킵: `node_modules/`, `dist/`, `build/`, `.next/`, `*.d.ts`, `*.min.*`, `.env*`, `*.pem`, `*secret*`, lock 파일 (impeccable SENSITIVE/GENERATED 레일)
-- 정책 스킵: tokens.css, globals.css, tailwind.config.*, `*.tokens.*`, DESIGN.md, `*.test.*`, `*.spec.*`
+- 정책 스킵: tokens.css, DESIGN.md `tokens_path` 파일, `*.tokens.*`, DESIGN.md, `*.test.*`, `*.spec.*`. (0.3부터 globals.css·tailwind.config.*는 **검사**: `@theme`/`theme.extend` 원색 우회 차단)
 - 128KB 초과 파일 스킵 (번들)
 - 오류는 절대 세션을 깨지 않는다: 최상위 try/catch → `exit 0` (impeccable "never break a turn")
 - DESIGN.md frontmatter를 파싱해 정책을 읽는다. 없으면 "설치 안 된 프로젝트"로 보고 `exit 0` (no-op)
@@ -495,9 +495,10 @@ radius_scale: soft         # sharp | soft | pill
 | **M1 룰 완성** | ✅ 완료 | FR-8~11. `--stop`(소프트 S1~S15), `--all`(토큰 커버리지 %), references 5개, `ui-init`(+`--legacy`, `--update`) | 레거시 프로젝트 1개 온보딩, 오탐 ≤ 5% |
 | **M2 배포** | ✅ 완료 | FR-12~13. `.claude-plugin/` 매니페스트, `skills/llms.txt`, README(ko), 골든 프롬프트 5개 + `eval/consistency.mjs` | 다른 작업자가 README만 보고 설치·사용 성공 |
 | **M3 확장** | ✅ 완료 | FR-14 ✅ Tailwind v3 브릿지. FR-15 ✅ 런타임 감사. FR-16 ✅ Figma 동기화 | |
+| **M5 보류분 반영 (0.3)** | ✅ 완료 | globals.css·tailwind.config 원색 우회 차단(tokens_path만 제외), tokens.css forced-colors 버튼 윤곽, design-audit 고대비 에뮬레이션 패스 | Playwright forced-colors로 좋은/나쁜/규칙 제거 페이지 3종 검증 |
 | **M4 2026-09 동향 반영** | ✅ 완료 | [research/2026-09-trends.md](research/2026-09-trends.md). Tailwind 4.1~4.3 우회 수정, 소프트 S16~S23, Stop 변경 줄만·규칙 4종, audit 색 정규화·2.5.8·줌·포커스, theme.css 브레이크포인트·dark 변형·그림자 네임스페이스, placeholder 4.5:1, 해요체 UX 라이팅 | 실제 Tailwind 4.3.3·3.4.19 빌드, 브라우저 프로브로 검증 |
 
-**테스트**: design-lint 145 + install 20 + audit 28 + figma 17 + tokens-contrast 4 + consistency 11 = 225개, 전부 통과 (2026-09-23).
+**테스트**: design-lint 151 + install 20 + audit 30 + figma 17 + tokens-contrast 4 + consistency 11 = 233개, 전부 통과 (2026-09-23).
 
 **FR-16 Figma 토큰 동기화**(2026-09-02): `figma-sync.mjs`가 Figma 변수(색 팔레트, Light/Dark 모드)를 REST로 읽어 tokens.css의 scale 색 토큰을 갱신한다. 색만 대상(gray/accent/red/green/blue 램프), 시맨틱·간격·라디우스는 안 건드림. 순수 로직(hexFromFigma/parseFigmaVariables/applyToTokensCss)은 실제 API 응답 형태 픽스처로 17개 테스트. dry-run 기본, `--write`로 반영. Variables API는 Enterprise 전용이라 403이면 플러그인 export를 `--from <json>`으로 받는다. FIGMA_TOKEN 없으면 안내 후 exit 0(CI 안 깸). 니치라 install에 자동 포함 안 하고 checkout에서 실행.
 

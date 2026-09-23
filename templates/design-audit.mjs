@@ -3,7 +3,8 @@
  * design-audit.mjs · ui-skill-set 0.1 · MIT
  *
  * 실행 중인 앱을 열어 정규식이 못 잡는 런타임 결함을 검사한다(대비·오버플로·터치타겟·focus-visible·
- * 접근 이름·alt·구조). design-lint(정적)의 짝. 편집 훅이 아니라 수동/CI 도구다.
+ * 접근 이름·alt·구조)와, 윈도우 고대비(forced-colors) 에뮬레이션 1회로 윤곽·포커스를 검사한다.
+ * design-lint(정적)의 짝. 편집 훅이 아니라 수동/CI 도구다.
  *
  *   node design-audit.mjs <url> [--viewports 375,768,1280] [--json]
  *
@@ -114,6 +115,37 @@ function collectInPage() {
   };
 }
 
+/** forced-colors(윈도우 고대비) 에뮬레이션 페이지에서 실행. 배경·그림자가 사라진 뒤 남는 윤곽과 포커스만 본다 */
+function collectForced() {
+  const vis = (el) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width >= 1 && r.height >= 1 && s.visibility !== 'hidden' && s.display !== 'none'; };
+  const hasOutline = (s) => s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0;
+  const noBoundary = [], noFocus = [];
+  const els = [...document.querySelectorAll('button,[role=button],input:not([type=hidden]),select,textarea')].filter(vis).slice(0, 40);
+  for (const el of els) {
+    const label = `<${el.tagName.toLowerCase()}>${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 16)}`;
+    const rest = getComputedStyle(el);
+    const border = ['Top', 'Right', 'Bottom', 'Left'].some((k) => parseFloat(rest[`border${k}Width`]) > 0 && rest[`border${k}Style`] !== 'none');
+    const restOutline = { w: rest.outlineWidth, o: rest.outlineOffset, s: rest.outlineStyle, on: hasOutline(rest) };
+    if (!border && !restOutline.on) noBoundary.push(label);
+    el.focus();
+    const f = getComputedStyle(el);
+    // box-shadow 링은 고대비에서 사라진다 → outline이 있고, 평소 상태와 달라야 포커스가 보인다
+    const changed = !restOutline.on || f.outlineWidth !== restOutline.w || f.outlineOffset !== restOutline.o || f.outlineStyle !== restOutline.s;
+    if (!(hasOutline(f) && changed)) noFocus.push(label);
+    el.blur();
+  }
+  return { noBoundary, noFocus };
+}
+
+/** forced-colors 수집 데이터 → findings (warn: 기존 focus-visible과 같은 등급) */
+export function evaluateForced(data) {
+  const out = [];
+  const add = (id, msg) => out.push({ severity: 'warn', id, vw: 'forced', msg });
+  if (data.noBoundary.length) add('forced-colors-boundary', `고대비에서 윤곽 없는 컨트롤 ${data.noBoundary.length}개 (배경색으로만 구분): ${data.noBoundary.slice(0, 3).join(', ')}. border-transparent 또는 tokens.css의 forced-colors 규칙 유지`);
+  if (data.noFocus.length) add('forced-colors-focus', `고대비에서 포커스 안 보이는 요소 ${data.noFocus.length}개: ${data.noFocus.slice(0, 3).join(', ')}. ring(box-shadow) 대신 outline`);
+  return out;
+}
+
 /** 확대 차단(WCAG 1.4.4). design-lint S17과 같은 판정 */
 export const ZOOM_OFF = /user-scalable\s*=\s*(?:no|0)\b|maximum-scale\s*=\s*1(?:\.0+)?(?![\d.])/i;
 
@@ -190,6 +222,12 @@ async function main() {
         all.push({ severity: 'blocker', id: 'load-failed', vw, msg: `로드 실패: ${e.message}` });
       } finally { await page.close(); }
     }
+    // 윈도우 고대비 한 번 (크로미움 에뮬레이션). 배경·box-shadow가 시스템 색/none으로 덮인 상태
+    const fp = await browser.newPage({ viewport: { width: 1280, height: 900 }, forcedColors: 'active' });
+    try {
+      await fp.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+      all.push(...evaluateForced(await fp.evaluate(collectForced)));
+    } catch { /* 에뮬레이션 미지원·로드 실패는 위 뷰포트 검사에서 이미 보고됨 */ } finally { await fp.close(); }
   } finally { await browser.close(); }
 
   const blockers = all.filter((f) => f.severity === 'blocker');
@@ -197,7 +235,7 @@ async function main() {
 
   if (!all.length) { process.stdout.write(`[ui-audit] ${url} · 뷰포트 ${viewports.join('/')} · 런타임 결함 0건. 좋은 디자인이라는 뜻은 아닙니다.\n`); process.exit(0); }
   const L = [`[ui-audit] ${url} · 뷰포트 ${viewports.join('/')} · blocker ${blockers.length} · warn ${all.length - blockers.length}`];
-  for (const f of all) L.push(`  ${f.severity === 'blocker' ? '✗' : '·'} [${f.vw}px] ${f.id.padEnd(18)} ${f.msg}`);
+  for (const f of all) L.push(`  ${f.severity === 'blocker' ? '✗' : '·'} [${typeof f.vw === 'number' ? `${f.vw}px` : f.vw}] ${f.id.padEnd(18)} ${f.msg}`);
   process.stdout.write(L.join('\n') + '\n');
   process.exit(blockers.length ? 1 : 0);
 }
@@ -207,4 +245,4 @@ if (process.argv[1] && path.resolve(process.argv[1]).toLowerCase() === self) mai
 
 // collectInPage 는 page.evaluate 로 브라우저에서 실행됨. 여기서 참조만 유지.
 void pathToFileURL;
-export { collectInPage };
+export { collectInPage, collectForced };

@@ -62,13 +62,17 @@ const UI_EXT = /\.(tsx|jsx|vue|svelte|astro|html|css|scss|less)$/i;
 const MAYBE_UI_EXT = /\.(ts|js|mjs|cjs)$/i;
 const JSX_OR_CSSINJS = /<[A-Za-z][^>]*>|\bstyled[.(]|\bcss`|className=/;
 const SKIP_ALWAYS = /(^|\/)(node_modules|dist|build|out|\.next|\.nuxt|\.cache|coverage|\.git|\.claude|\.vscode|\.idea|__generated__)(\/|$)|\.d\.ts$|\.min\.|(^|\/)\.env|secret[^/]*\.json$|\.pem$|id_rsa|(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?)$/i;
-const SKIP_POLICY = /(^|\/)(tokens\.css|globals?\.css|tailwind\.config\.[cm]?[jt]s|DESIGN\.md)$|\.tokens\.|\.(test|spec|stories)\./i;
+const SKIP_POLICY = /(^|\/)(tokens\.css|DESIGN\.md)$|\.tokens\.|\.(test|spec|stories)\./i;
+// globals.css·tailwind.config 는 검사한다: @theme / theme.extend 에 원색을 정의해 R1~R3을 우회하는 통로라서.
+// 토큰을 거기 두는 프로젝트는 DESIGN.md tokens_path 로 지정하면 그 파일만 제외된다.
+const TW_CONFIG = /(^|\/)tailwind\.config\.[cm]?[jt]s$/i;
 const MAX_BYTES = 131072;
 
-export function isUiFile(filePath, content = '') {
+export function isUiFile(filePath, content = '', tokensPath = '') {
   const rel = String(filePath).replace(/\\/g, '/');
   if (SKIP_ALWAYS.test(rel) || SKIP_POLICY.test(rel)) return false;
-  if (UI_EXT.test(rel)) return true;
+  if (tokensPath && rel === String(tokensPath).replace(/\\/g, '/').replace(/^\.\//, '')) return false;
+  if (UI_EXT.test(rel) || TW_CONFIG.test(rel)) return true;
   if (MAYBE_UI_EXT.test(rel)) return JSX_OR_CSSINJS.test(content);
   return false;
 }
@@ -328,7 +332,7 @@ export function runPre(input, cfg, root) {
   else return null;
   const abs = path.resolve(root, file);
   const rel = path.relative(root, abs).replace(/\\/g, '/');
-  if (rel.startsWith('..') || !isUiFile(rel, content) || Buffer.byteLength(content) > MAX_BYTES) return null;
+  if (rel.startsWith('..') || !isUiFile(rel, content, cfg.tokens_path) || Buffer.byteLength(content) > MAX_BYTES) return null;
 
   const findings = lint(content, rel, cfg, { existing: safeRead(abs) }).filter((f) => f.tier === 'hard' && f.severity === 'block');
   const state = readState(root);
@@ -394,7 +398,7 @@ export function lintFiles(files, cfg, root, { soft = false } = {}) {
     let st; try { st = fs.statSync(abs); } catch { continue; }
     if (!st.isFile() || st.size > MAX_BYTES) continue;
     const c = fs.readFileSync(abs, 'utf8');
-    if (!isUiFile(f, c)) continue;
+    if (!isUiFile(f, c, cfg.tokens_path)) continue;
     for (const x of lint(c, f, cfg, { soft })) all.push({ file: f.replace(/\\/g, '/'), ...x });
   }
   return all;
@@ -454,7 +458,7 @@ export function runAll(cfg, root) {
     let st; try { st = fs.statSync(abs); } catch { continue; }
     if (!st.isFile() || st.size > MAX_BYTES) continue;
     const c = fs.readFileSync(abs, 'utf8');
-    if (!isUiFile(f, c)) continue;
+    if (!isUiFile(f, c, cfg.tokens_path)) continue;
     const rel = f.replace(/\\/g, '/');
     tokenUses += (c.match(varRx) || []).length + (c.match(SEMANTIC_UTIL) || []).length;
     for (const x of lint(c, rel, cfg, { soft: true })) { all.push({ file: rel, ...x }); byFile.set(rel, (byFile.get(rel) ?? 0) + 1); }

@@ -1,6 +1,6 @@
 // design-audit.test.mjs — 대비 수학 + 판정 로직(브라우저 불필요). node templates/design-audit.test.mjs
 import assert from 'node:assert/strict';
-import { parseColor, relLuminance, contrastRatio, composite, contrastThreshold, evaluate } from './design-audit.mjs';
+import { parseColor, relLuminance, contrastRatio, composite, contrastThreshold, evaluate, evaluateForced } from './design-audit.mjs';
 
 let n = 0, failed = 0;
 const t = (name, fn) => { try { fn(); n++; } catch (e) { failed++; console.error(`✗ ${name}\n   ${e.message}`); } };
@@ -68,6 +68,12 @@ t('target < 24px → blocker at desktop too', () => {
   const f = evaluate(d, 1280);
   assert.ok(f.some((x) => x.id === 'target-size' && x.severity === 'blocker'));
   assert.ok(!evaluate(d, 375).some((x) => x.id === 'touch-target'), '24px blocker와 44px warn 중복 없음');
+});
+t('forced-colors: clean → no findings', () => assert.equal(evaluateForced({ noBoundary: [], noFocus: [] }).length, 0));
+t('forced-colors: boundary + focus → warn each', () => {
+  const f = evaluateForced({ noBoundary: ['<button>저장'], noFocus: ['<button>저장', '<input>'] });
+  assert.deepEqual(f.map((x) => [x.id, x.severity, x.vw]), [['forced-colors-boundary', 'warn', 'forced'], ['forced-colors-focus', 'warn', 'forced']]);
+  assert.match(f[1].msg, /2개/);
 });
 t('inline link / labelled checkbox exempt from 24px', () => {
   const d = { ...okData, interactive: [{ tag: 'a', w: 40, h: 18, hasName: true, focusVisible: true, inline: true }, { tag: 'input', w: 16, h: 16, hasName: true, focusVisible: true, labelled: true }] };

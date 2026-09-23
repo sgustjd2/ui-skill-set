@@ -169,11 +169,48 @@ claude plugin marketplace add sgustjd2/ui-skill-set
 
 ---
 
-## 기존 프로젝트 업데이트 (0.1 → 0.2)
+## 기존 프로젝트 업데이트
 
-0.2는 [2026-09 동향 조사](docs/research/2026-09-trends.md)를 반영한 버전이다. `--update`는 **훅과 스킬만** 바꾸고, 프로젝트가 소유한 파일(`DESIGN.md`·`tokens.css`·`theme.css`/프리셋)은 건드리지 않는다. 그래서 두 단계로 옮긴다.
+`--update`(또는 `/ui-init --update`)는 **훅과 스킬만** 바꾸고, 프로젝트가 소유한 파일(`DESIGN.md`·`tokens.css`·`theme.css`/프리셋)은 건드리지 않는다. 버전마다 손으로 옮길 것을 아래에 적는다. 0.1에서 올라오면 **0.1 → 0.2를 먼저**, 그다음 0.2 → 0.3을 한다.
 
-### 1단계: 훅·스킬 갱신 (자동)
+### 0.2 → 0.3
+
+보류했던 두 가지를 반영한 버전이다([조사 보고서 §5](docs/research/2026-09-trends.md)).
+
+**1. 훅·스킬 갱신** 후 바로 `--all`을 돌린다:
+
+```bash
+node /path/to/ui-skill-set/templates/install.mjs --target . --update
+node .claude/hooks/design-lint.mjs --all
+```
+
+`globals.css`와 `tailwind.config.*`를 이제 **검사한다**. 0.2까지는 두 파일을 통째로 건너뛰어서, `bg-[#7c3aed]`가 막히면 `@theme`에 `--color-hero: #7c3aed`를 정의하고 `bg-hero`로 쓰는 우회가 가능했다. 그래서 CI에서 새로 걸릴 수 있다:
+
+| 새로 잡히는 곳 | 고치는 법 |
+|---|---|
+| `globals.css`에 남은 create-next-app 기본값 (`--background: #ffffff`, `font-family: Arial`) | 지운다. 배경·글자색은 tokens.css가 `html`에 이미 준다 |
+| `globals.css`의 `@theme`에 원색 (`--color-x: #…`) | 값을 tokens.css로 옮기고 `var(--ui-…)`로 참조 |
+| `tailwind.config.js` `theme.extend.colors`의 원색 (v3) | 같다. 색은 `tailwind.ui-preset.cjs`가 준다 |
+
+토큰을 원래 `globals.css`에 두는 프로젝트라면 DESIGN.md의 `tokens_path`를 그 파일로 지정한다(예: `tokens_path: app/globals.css`). 그 파일만 검사에서 빠진다.
+
+**2. tokens.css에 고대비 규칙 추가**(`@media (prefers-contrast: more)` 블록 바로 위):
+
+```css
+@media (forced-colors: active) {
+  :where(button, [role="button"]) { outline: 1px solid; outline-offset: -1px; }
+}
+```
+
+윈도우 고대비 모드는 배경색을 시스템 색으로 덮는다. 그래서 Tailwind preflight(`border: 0`) 위에 배경색으로만 만든 버튼은 **글자만 남는다**. 안쪽 outline이라 레이아웃은 안 밀리고, 포커스 때는 `:focus-visible` 링이 이긴다.
+
+**3. design-audit**가 고대비 에뮬레이션 패스를 한 번 더 돈다(warn). 위 규칙이 있으면 기본 버튼은 통과한다. 경고가 나오면 대개 `focus-visible:ring-*`만 쓰고 outline을 지운 곳이다. ring은 box-shadow라 고대비에서 사라진다.
+
+### 0.1 → 0.2
+
+0.2는 [2026-09 동향 조사](docs/research/2026-09-trends.md)를 반영한 버전이다. 훅·스킬 갱신(자동) 다음에 프로젝트 파일 반영(수동)을 한다.
+
+#### 1단계: 훅·스킬 갱신 (자동)
 
 ```bash
 node /path/to/ui-skill-set/templates/install.mjs --target . --update
@@ -201,7 +238,7 @@ node .claude/hooks/design-lint.mjs --all
 
 > **1단계만 하고 커밋하지 않는다.** 새 `tokens-contrast`는 0.1 `tokens.css`의 placeholder(라이트 3.42:1)를 미달로 잡아 exit 1을 낸다. CI에 이 검사가 있으면 빨간불이 들어온다. 2단계 tokens.css ①까지 하고 같이 커밋한다.
 
-### 2단계: 프로젝트 파일 반영 (수동)
+#### 2단계: 프로젝트 파일 반영 (수동)
 
 | 파일 | 할 일 | 필수? |
 |---|---|---|
@@ -275,7 +312,7 @@ copy_register: haeyo      # 해요체 제품. 합니다체면 hamnida. 줄이 �
 
 원하면 본문에도 옮긴다(템플릿 [templates/DESIGN.md](templates/DESIGN.md) 참고): §3 카피 한 줄, §4 safe area 한 줄, §7 `user-invalid:`와 "닫기 vs 취소" 두 줄.
 
-### 3단계: 확인·커밋
+#### 3단계: 확인·커밋
 
 ```bash
 node .claude/hooks/design-lint.mjs --all
@@ -288,7 +325,7 @@ Tailwind v3면 `theme.css` 대신 `tailwind.ui-preset.cjs`를 add한다.
 
 design-audit는 0.2에서 blocker가 늘었다. 24px 미만 타겟(WCAG 2.5.8, 모든 뷰포트)과 확대 차단(`user-scalable=no`·`maximum-scale=1`)이 새로 exit 1을 낸다. 또 계산된 색이 `oklab()`으로 오던 요소(Tailwind v4의 `/opacity` 등)를 0.1은 대비 검사에서 **조용히 건너뛰었다.** 0.2에서 처음으로 대비 미달이 보일 수 있는데, 새로 생긴 문제가 아니라 원래 있던 결함이다.
 
-### 팀원이 체감하는 변화
+#### 팀원이 체감하는 변화
 
 - **종료 전 점검(Stop)이 조용해진다.** 이번 세션에서 추가·수정한 줄만 지적하고, 규칙은 4종까지 묶어서 보여 준다(접근성 먼저). 레거시 파일의 기존 부채는 `--all`에서만 보인다.
 - **소프트 룰 8개가 늘었다.** 임의값 `p-[13px]`(대체 클래스 제안), 확대 차단, 크기·여백 전이, `dark:` 분기, CTA 끝 `→`, `<div onClick>`, aria-label 불일치, 존댓말 혼용. 정당한 경우는 기존처럼 `/* ui-lint-allow <id>: <이유> */`.
@@ -317,7 +354,7 @@ npm i -D playwright && npx playwright install chromium   # 최초 1회
 node .claude/hooks/design-audit.mjs http://localhost:5173
 ```
 
-뷰포트 375/768/1280에서: 대비 4.5:1(큰 글자 3:1) 미달·가로 스크롤·`<html lang>`/viewport 누락·확대 차단(`user-scalable=no`)·24px 미만 타겟(WCAG 2.5.8, 문장 속 링크 제외)은 **blocker(exit 1)**; 44px 미만 터치타겟(모바일)·안 보이는 포커스(포커스 전후 비교)·이름 없는 버튼·alt 없는 이미지·h1 개수는 **warn**. 계산된 색이 `oklab()`/`oklch()`/`color(srgb …)`로 와도(Tailwind v4 `/opacity` 등) 캔버스로 정규화해 대비를 잰다. playwright가 없으면 안내 후 exit 0(CI를 안 깬다).
+뷰포트 375/768/1280에서 한 번씩, 그리고 윈도우 고대비(forced-colors) 에뮬레이션으로 한 번 더 연다. 뷰포트에서는: 대비 4.5:1(큰 글자 3:1) 미달·가로 스크롤·`<html lang>`/viewport 누락·확대 차단(`user-scalable=no`)·24px 미만 타겟(WCAG 2.5.8, 문장 속 링크 제외)은 **blocker(exit 1)**; 44px 미만 터치타겟(모바일)·안 보이는 포커스(포커스 전후 비교)·이름 없는 버튼·alt 없는 이미지·h1 개수는 **warn**. 계산된 색이 `oklab()`/`oklch()`/`color(srgb …)`로 와도(Tailwind v4 `/opacity` 등) 캔버스로 정규화해 대비를 잰다. 고대비 패스는 배경·그림자가 시스템 색으로 덮인 뒤 **윤곽이 없는 버튼**(배경색으로만 구분)과 **안 보이는 포커스**(box-shadow 링)를 warn으로 낸다. playwright가 없으면 안내 후 exit 0(CI를 안 깬다).
 
 ### Figma 토큰 동기화
 
@@ -368,6 +405,8 @@ node eval/consistency.mjs runs/01-settings --roles      # 역할별(코어) 일�
 | R3 | `hardcoded-color` | 컴포넌트의 hex/rgb/oklch/hwb/`color(display-p3 …)`, `bg-blue-500` 류 팔레트 클래스(v4.2 `mauve`·`olive`·`mist`·`taupe`, `scrollbar-thumb-*` 포함). 토큰 파생 `color-mix(in oklab, var(--ui-…) …)`은 허용 | `var(--ui-color-…)` / `bg-brand-solid` |
 | R4 | `hardcoded-font` | `font-family: Inter`, Google Fonts 링크, `font-['…']`·`font-[Open_Sans]`, DESIGN.md에 없는 `next/font/google`·`@fontsource/*` | `var(--ui-font-sans)` / `font-sans` |
 
+검사 대상은 UI 파일(tsx·jsx·vue·svelte·astro·html·css…)과 **`globals.css`·`tailwind.config.*`**(`@theme`·`theme.extend`에 원색을 정의해 우회하는 통로). 제외는 `tokens.css`, DESIGN.md `tokens_path`로 지정한 파일, 테스트·스토리.
+
 ### 소프트 룰 (종료 전 1회 지적, Stop)
 
 `--stop`에서만 발화하고 한 번만 block한다(고친 뒤 다시 종료하면 통과). **이번 세션에서 추가·수정한 줄만** 보고(레거시 파일의 기존 부채는 `--all`로), 규칙은 **최대 4종**으로 묶어 보여 준다(한 번에 주입하는 규칙이 적어야 지켜진다). CI(`--all`)는 소프트로 실패하지 않는다.
@@ -384,7 +423,7 @@ node eval/consistency.mjs runs/01-settings --roles      # 역할별(코어) 일�
 | Tailwind v3 | `react-tailwind3` | `tailwind.ui-preset.cjs` | config에 `presets: [require('./tailwind.ui-preset.cjs')]` + tokens.css import |
 | 순수 CSS/기타 | `react-css` · `plain` | 없음 | tokens.css만 import, `var(--ui-*)` 직접 사용 |
 
-세 경로 모두 `bg-brand-solid`·`text-4`·`rounded-control`(또는 `var(--ui-*)`)가 같은 `--ui-*`를 참조하므로 다크모드 전환이 동일하게 동작한다. 재설치는 `--update`(훅·스킬만 갱신, tokens.css·DESIGN.md 보존). 버전을 올릴 때 프로젝트 파일에 옮길 것은 [기존 프로젝트 업데이트](#기존-프로젝트-업데이트-01--02)를 본다.
+세 경로 모두 `bg-brand-solid`·`text-4`·`rounded-control`(또는 `var(--ui-*)`)가 같은 `--ui-*`를 참조하므로 다크모드 전환이 동일하게 동작한다. 재설치는 `--update`(훅·스킬만 갱신, tokens.css·DESIGN.md 보존). 버전을 올릴 때 프로젝트 파일에 옮길 것은 [기존 프로젝트 업데이트](#기존-프로젝트-업데이트)를 본다.
 
 ### 저장소 구조
 

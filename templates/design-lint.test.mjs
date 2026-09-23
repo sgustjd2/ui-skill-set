@@ -69,8 +69,14 @@ t('R4 custom font_families', () => assert.ok(!has(css('font-family: "Noto Sans K
 
 // ── 파일 분류
 t('isUiFile tokens.css skipped', () => assert.equal(isUiFile('src/styles/tokens.css'), false));
-t('isUiFile globals.css skipped', () => assert.equal(isUiFile('app/globals.css'), false));
-t('isUiFile tailwind.config skipped', () => assert.equal(isUiFile('tailwind.config.ts'), false));
+t('isUiFile globals.css linted (@theme 우회 통로)', () => assert.equal(isUiFile('app/globals.css'), true));
+t('isUiFile globals.css skipped when it is tokens_path', () => assert.equal(isUiFile('app/globals.css', '', 'app/globals.css'), false));
+t('isUiFile tokens_path with ./ prefix', () => assert.equal(isUiFile('src/app.css', '', './src/app.css'), false));
+t('isUiFile tailwind.config linted (theme.extend 우회 통로)', () => { assert.equal(isUiFile('tailwind.config.ts', 'export default {}'), true); assert.equal(isUiFile('tailwind.config.cjs', 'module.exports = {}'), true); });
+t('globals.css @theme raw color blocked', () => { const r = lint('@theme inline {\n  --color-hero: #7c3aed;\n  --color-ink: oklch(0.2 0 0);\n}', 'app/globals.css'); assert.ok(has(r, 'ai-purple')); assert.ok(has(r, 'hardcoded-color')); });
+t('globals.css token-only @theme passes', () => assert.equal(lint('@import "tailwindcss";\n@theme inline {\n  --color-hero: var(--ui-color-bg-brand-solid);\n}', 'app/globals.css').length, 0));
+t('tailwind.config v3 theme.extend raw color blocked', () => assert.ok(has(lint("module.exports = {\n  theme: { extend: { colors: { hero: '#ff5a1f' } } },\n};", 'tailwind.config.js'), 'hardcoded-color')));
+t('tailwind.config with preset only passes', () => assert.equal(lint("module.exports = {\n  presets: [require('./tailwind.ui-preset.cjs')],\n  content: ['./src/**/*.{html,js,ts,jsx,tsx}'],\n};", 'tailwind.config.js').length, 0));
 t('isUiFile DESIGN.md skipped', () => assert.equal(isUiFile('DESIGN.md'), false));
 t('isUiFile tsx', () => assert.equal(isUiFile('src/Button.tsx'), true));
 t('isUiFile vue', () => assert.equal(isUiFile('src/Button.vue'), true));

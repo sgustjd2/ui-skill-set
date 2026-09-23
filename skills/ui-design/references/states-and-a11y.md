@@ -30,7 +30,7 @@
 
 - 모든 상호작용을 키보드로 도달·조작 가능. 탭 순서가 시각 순서와 일치.
 - `:focus-visible` 링이 보인다. tokens.css가 `2px solid var(--ui-color-stroke-focus)` + `2px` 오프셋을 전역으로 넣는다. 덮어썼는지 확인.
-- 포커스 표시는 **`outline`으로**. `ring-*`은 box-shadow라 Windows 고대비(forced-colors)에서 사라진다. 숨겨야 하면 `outline-none` 대신 `outline-hidden`(고대비에서는 남는다). 그림자만으로 경계를 만든 카드·버튼은 `border border-transparent`를 깔아 고대비에서도 윤곽이 남게.
+- 포커스 표시는 **`outline`으로**. `ring-*`은 box-shadow라 Windows 고대비(forced-colors)에서 사라진다. 숨겨야 하면 `outline-none` 대신 `outline-hidden`(고대비에서는 남는다). 버튼은 tokens.css가 고대비에서 안쪽 outline을 그려 주므로 그 규칙을 덮어쓰지 않는다. 그림자만으로 경계를 만든 카드는 `border border-transparent`를 깔아 고대비에서도 윤곽이 남게. (design-audit가 고대비 에뮬레이션으로 확인)
 - 클릭 가능한 `<div onClick>` 금지(S21). `<button>`을 쓰고 `aria-pressed`/`aria-expanded`로 상태를 노출. 버튼 안에 버튼 금지.
 - 표 행 전체 클릭(`<tr onClick>`) 금지. 첫 셀에 링크를 두고 `relative` 행 + 링크에 `after:absolute after:inset-0`으로 영역을 넓힌다.
 - 컨트롤을 hover로만 드러내지 않는다(터치엔 hover가 없다).

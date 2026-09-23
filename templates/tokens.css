@@ -235,6 +235,12 @@
 /* 시스템 다크 따르기: <html>에 아래 인라인 스크립트 한 줄 (깜빡임 방지, 최상단)
    <script>document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'</script> */
 
+/* 윈도우 고대비(forced-colors): 배경색이 시스템 색으로 덮여 배경으로만 구분되던 버튼이 글자만 남는다.
+   안쪽 outline으로 윤곽을 그린다(레이아웃 안 밀림). 포커스 때는 더 구체적인 :focus-visible 링이 이긴다 */
+@media (forced-colors: active) {
+  :where(button, [role="button"]) { outline: 1px solid; outline-offset: -1px; }
+}
+
 /* 고대비 요청: 가장 흐린 회색과 경계선을 한 단계 진하게 (scale을 참조하므로 라이트·다크 모두 적용) */
 @media (prefers-contrast: more) {
   :root {
